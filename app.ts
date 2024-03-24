@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import postsRoutes from './routes/posts';
 
 const app = express();
-const port = 1500;
+const port = 6000;
 
 // Import routes
 app.use(express.json()); // Use built-in JSON parsing middleware
