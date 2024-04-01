@@ -8,7 +8,12 @@ const router = Router();
 // Register route
 router.post('/register', async (req: Request, res: Response) => {
     try {
-        const {Name,Email,Password,UserID,Age,PhoneNumber,Address} = req.body;
+        const { Name, Email, Password, UserID, Age, PhoneNumber, Address } = req.body;
+        
+        // Check if email field is provided
+        if (!Email) {
+            return res.status(400).json({ message: 'Email is required' });
+        }
 
         // Check if user with the same email already exists
         const existingUser: IUser | null = await User.findOne({ Email });
@@ -25,9 +30,10 @@ router.post('/register', async (req: Request, res: Response) => {
             UserID,
             Name,
             Email,
-            Password: hashedPassword
-            ,Age,PhoneNumber,Address
-
+            Password: hashedPassword,
+            Age,
+            PhoneNumber,
+            Address
         });
 
         // Save the user to the database
@@ -39,6 +45,7 @@ router.post('/register', async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 });
+
 
 // Login route
 router.post('/login', async (req: Request, res: Response) => {
@@ -59,14 +66,24 @@ router.post('/login', async (req: Request, res: Response) => {
             return res.status(401).json({ message: 'Invalid password' });
         }
 
-        // Create JWT token
-        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET || 'secret');
-
-        res.status(200).json({ token });
+        // Include all user data in the response
+        res.status(200).json({ 
+            user: {
+                UserID: user.UserID,
+                Name: user.Name,
+                Email: user.Email,
+                Age: user.Age,
+                PhoneNumber: user.PhoneNumber,
+                Address: user.Address,
+                Role:user.Role
+                // Add more fields if needed
+            }
+        });
     } catch (error) {
         console.error('Error logging in:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 });
+
 
 export default router;
