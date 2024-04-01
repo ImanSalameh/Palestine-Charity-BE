@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import postsRoutes from './routes/posts';
 
 const app = express();
-const port = 2000;
+const port = 6000;
 
 // Import routes
 app.use(express.json()); // Use built-in JSON parsing middleware
@@ -32,4 +32,4 @@ mongoose.connect(mongoURI)
     process.exit(1); // Exit the process if there's an error
   });
 
-console.log("hi");
+console.log("hava a nice day!");
