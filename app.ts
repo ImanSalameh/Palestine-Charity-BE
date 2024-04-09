@@ -2,11 +2,16 @@ import express, { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import postsRoutes from './routes/posts';
 import { User } from './models/Users';
+import cors from 'cors';
 const app = express();
-const port = 3000;
-
+const port=3;
 // Import routes
 app.use(express.json()); // Use built-in JSON parsing middleware
+const corsOptions = {
+  origin: 'http://localhost:4200',
+};
+
+app.use(cors(corsOptions));
 app.use('/posts', postsRoutes);
 
 // MongoDB connection URI 

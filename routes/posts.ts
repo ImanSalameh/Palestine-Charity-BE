@@ -8,7 +8,7 @@ const router = Router();
 // Register route
 router.post('/register', async (req: Request, res: Response) => {
     try {
-        const { Name, Email, Password, UserID, Age, PhoneNumber, Address } = req.body;
+        const { Name, Email, Password, Age, PhoneNumber, Address} = req.body;
         
         // Check if email field is provided
         if (!Email) {
@@ -27,7 +27,6 @@ router.post('/register', async (req: Request, res: Response) => {
 
         // Create new user
         const newUser: IUser = new User({
-            UserID,
             Name,
             Email,
             Password: hashedPassword,
@@ -39,7 +38,20 @@ router.post('/register', async (req: Request, res: Response) => {
         // Save the user to the database
         await newUser.save();
 
-        res.status(201).json({ message: 'User registered successfully' });
+
+        // Include the auto-generated _id in the response
+        res.status(201).json({ 
+            message: 'User registered successfully',
+            user: {
+                _id: newUser._id, // Include the _id in the response
+                Name: newUser.Name,
+                Email: newUser.Email,
+                Age: newUser.Age,
+                PhoneNumber: newUser.PhoneNumber,
+                Address: newUser.Address,
+                Role: newUser.Role
+            }
+        });
     } catch (error) {
         console.error('Error registering user:', error);
         res.status(500).json({ message: 'Internal server error' });
@@ -47,6 +59,8 @@ router.post('/register', async (req: Request, res: Response) => {
 });
 
 
+
+// Login route
 // Login route
 router.post('/login', async (req: Request, res: Response) => {
     try {
@@ -59,29 +73,45 @@ router.post('/login', async (req: Request, res: Response) => {
             return res.status(404).json({ message: 'User not found' });
         }
 
+        // Check if the password is provided
+        if (!Password) {
+            return res.status(400).json({ message: 'Password is required' });
+        }
+
+        // Check if the user's password is provided
+        if (!user.Password) {
+            return res.status(500).json({ message: 'User password is missing' });
+        }
+
         // Compare the provided password with the hashed password in the database
         const passwordMatch = await bcrypt.compare(Password, user.Password);
 
-        if (!passwordMatch) {
-            return res.status(401).json({ message: 'Invalid password' });
-        }
+        // Convert the ObjectId to a string
+        const userIdString = user._id.toString();
 
-        // Include all user data in the response
+        // Include all user data in the response, including the UserID
         res.status(200).json({ 
             user: {
-                UserID: user.UserID,
+                _id: userIdString, // Include the _id in the response as a string
                 Name: user.Name,
                 Email: user.Email,
                 Age: user.Age,
                 PhoneNumber: user.PhoneNumber,
                 Address: user.Address,
-                Role:user.Role
+                Role: user.Role
                 // Add more fields if needed
             }
         });
+
     } catch (error) {
         console.error('Error logging in:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        // Return the user's _id even if there's an error
+        if (user) {
+            const userIdString = user._id.toString();
+            return res.status(500).json({ message: 'Internal server error', _id: userIdString });
+        } else {
+            return res.status(500).json({ message: 'Internal server error' });
+        }
     }
 });
 

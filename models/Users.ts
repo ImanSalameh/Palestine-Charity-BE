@@ -2,7 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 import bcrypt from 'bcrypt';
 // Base User interface
 export interface IUser extends Document {
-    UserID: number;
+
     Name: string;
     VirtualCurrency: number;
     Address: string;
@@ -13,20 +13,25 @@ export interface IUser extends Document {
     Password:string;
     Role: string; // Include Role field here
 }
-
 // Base User schema
 const userSchema: Schema<IUser> = new Schema<IUser>({
-    UserID: { type: Number },
     Name: { type: String },
-    VirtualCurrency: { type: Number },
+    token: { type: Number },
     Address: { type: String},
+    //title,description,date,image
     Badges: { type: Object },
-    Age: { type: Number},
+    Age: { type: Date},
+    //Class of Drec(nameofcampaign(string),paymentMethod())
+    Donationrecords:{type:Object},
+    //campaign(name,description)
+    favorite:{type:Object},
     PhoneNumber: { type: String},
     Email: { type: String },
     Password: { type: String },
     Role: { type: String } // Define Role field here
 }, { discriminatorKey: 'type' });
+
+
 
 
 // Organization interface
