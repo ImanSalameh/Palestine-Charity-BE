@@ -2,7 +2,6 @@ import mongoose, { Schema, Document } from 'mongoose';
 import bcrypt from 'bcrypt';
 // Base User interface
 export interface IUser extends Document {
-
     Name: string;
     VirtualCurrency: number;
     Address: string;
@@ -15,6 +14,7 @@ export interface IUser extends Document {
 }
 // Base User schema
 const userSchema: Schema<IUser> = new Schema<IUser>({
+    
     Name: { type: String },
     token: { type: Number },
     Address: { type: String},

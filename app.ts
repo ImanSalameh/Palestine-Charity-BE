@@ -4,7 +4,7 @@ import postsRoutes from './routes/posts';
 import { User } from './models/Users';
 import cors from 'cors';
 const app = express();
-const port=3;
+const port=3000;
 // Import routes
 app.use(express.json()); // Use built-in JSON parsing middleware
 const corsOptions = {
