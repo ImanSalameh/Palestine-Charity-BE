@@ -2,7 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 import bcrypt from 'bcrypt';
 // Base User interface
 export interface IUser extends Document {
-    UserID: number;
+ 
     Name: string;
     VirtualCurrency: number;
     Address: string;
@@ -11,11 +11,12 @@ export interface IUser extends Document {
     PhoneNumber: string;
     Email: string;
     Password:string;
+    Role: string; // Include Role field here
 }
 
 // Base User schema
 const userSchema: Schema<IUser> = new Schema<IUser>({
-    UserID: { type: Number, unique: true, required: true },
+  
     Name: { type: String },
     VirtualCurrency: { type: Number },
     Address: { type: String},
@@ -23,8 +24,10 @@ const userSchema: Schema<IUser> = new Schema<IUser>({
     Age: { type: Number},
     PhoneNumber: { type: String},
     Email: { type: String },
-    Password: { type: String } // Define password field
+    Password: { type: String },
+    Role: { type: String } // Define Role field here
 }, { discriminatorKey: 'type' });
+
 
 // Organization interface
 export interface IOrganization extends IUser {
@@ -43,7 +46,7 @@ const organizationSchema: Schema<IOrganization> = new Schema<IOrganization>({
     Description: { type: String, required: true },
     Revenue: { type: mongoose.Types.Decimal128, required: true },
     CEO: { type: String, required: true },
-    Industry: { type: String, required: true },
+    Industry: { type: String, required: true }
 });
 
 // Admin interface
@@ -96,6 +99,3 @@ export const Organization = User.discriminator<IOrganization>('Organization', or
 export const Admin = User.discriminator<IAdmin>('Admin', adminSchema);
 export const Influencer = User.discriminator<IInfluencer>('Influencer', influencerSchema);
 export const Donor = User.discriminator<IDonor>('Donor', donorSchema);
-
-
-

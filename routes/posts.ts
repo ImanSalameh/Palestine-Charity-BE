@@ -2,13 +2,19 @@ import { Router, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { IUser, User } from '../models/Users';
+import { sign } from 'jsonwebtoken';
 
 const router = Router();
 
 // Register route
 router.post('/register', async (req: Request, res: Response) => {
     try {
-        const {Name,Email,Password,UserID,Age,PhoneNumber,Address} = req.body;
+        const { Name, Email, Password, Age, PhoneNumber, Address } = req.body;
+        
+        // Check if email field is provided
+        if (!Email) {
+            return res.status(400).json({ message: 'Email is required' });
+        }
 
         // Check if user with the same email already exists
         const existingUser: IUser | null = await User.findOne({ Email });
@@ -20,20 +26,26 @@ router.post('/register', async (req: Request, res: Response) => {
         // Hash the password
         const hashedPassword = await bcrypt.hash(Password, 10);
 
-        // Create new user
+        // Create new user without specifying UserID
         const newUser: IUser = new User({
-            UserID,
             Name,
             Email,
-            Password: hashedPassword
-            ,Age,PhoneNumber,Address
-
+            Password: hashedPassword,
+            Age,
+            PhoneNumber,
+            Address
         });
 
         // Save the user to the database
-        await newUser.save();
+        const savedUser = await newUser.save();
 
-        res.status(201).json({ message: 'User registered successfully' });
+        // Generate a token for the user
+        const token = sign({ userId: savedUser._id }, 'your_secret_key', { expiresIn: '1h' });
+
+        // Include the auto-generated _id and token in the response
+        res.status(201).json({ 
+            message: 'User registered successfully'
+        });
     } catch (error) {
         console.error('Error registering user:', error);
         res.status(500).json({ message: 'Internal server error' });
@@ -59,10 +71,23 @@ router.post('/login', async (req: Request, res: Response) => {
             return res.status(401).json({ message: 'Invalid password' });
         }
 
-        // Create JWT token
-        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET || 'secret');
+        // Generate a token for the user
+        const token = sign({ userId: user._id }, 'your_secret_key', { expiresIn: '1h' });
 
-        res.status(200).json({ token });
+        // Include all user data and the token in the response
+        res.status(200).json({ 
+            user: {
+                _id: user._id.toString(),
+                Name: user.Name,
+                Email: user.Email,
+                Age: user.Age,
+                PhoneNumber: user.PhoneNumber,
+                Address: user.Address,
+                Role: user.Role
+                // Add more fields if needed
+            },
+            
+        });
     } catch (error) {
         console.error('Error logging in:', error);
         res.status(500).json({ message: 'Internal server error' });
