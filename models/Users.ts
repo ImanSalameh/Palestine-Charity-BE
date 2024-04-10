@@ -2,6 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 import bcrypt from 'bcrypt';
 // Base User interface
 export interface IUser extends Document {
+
     Name: string;
     VirtualCurrency: number;
     Address: string;
@@ -14,7 +15,7 @@ export interface IUser extends Document {
 }
 // Base User schema
 const userSchema: Schema<IUser> = new Schema<IUser>({
-    
+
     Name: { type: String },
     token: { type: Number },
     Address: { type: String},
@@ -30,8 +31,6 @@ const userSchema: Schema<IUser> = new Schema<IUser>({
     Password: { type: String },
     Role: { type: String } // Define Role field here
 }, { discriminatorKey: 'type' });
-
-
 
 
 // Organization interface
