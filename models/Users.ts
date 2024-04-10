@@ -4,10 +4,12 @@ import bcrypt from 'bcrypt';
 export interface IUser extends Document {
 
     Name: string;
-    VirtualCurrency: number;
+    token: number;
     Address: string;
     Badges?: Record<string, any>; // Assuming badges are stored as an object
-    Age: number;
+    Age: Date;
+    Donationrecords:{type:Object};
+    favorite:{type:Object};
     PhoneNumber: string;
     Email: string;
     Password:string;
