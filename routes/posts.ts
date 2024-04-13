@@ -4,13 +4,15 @@ import jwt from 'jsonwebtoken';
 import { IUser, User } from '../models/Users';
 import { sign } from 'jsonwebtoken';
 
+import { ICampaign, Campaign } from '../models/campaigns';
+
 const router = Router();
 
 // Register route
 router.post('/register', async (req: Request, res: Response) => {
     try {
         const { Name, Email, Password, Age, PhoneNumber, Address } = req.body;
-        
+
         // Check if email field is provided
         if (!Email) {
             return res.status(400).json({ message: 'Email is required' });
@@ -43,7 +45,7 @@ router.post('/register', async (req: Request, res: Response) => {
         const token = sign({ userId: savedUser._id }, 'your_secret_key', { expiresIn: '1h' });
 
         // Include the auto-generated _id and token in the response
-        res.status(201).json({ 
+        res.status(201).json({
             message: 'User registered successfully'
         });
     } catch (error) {
@@ -75,7 +77,7 @@ router.post('/login', async (req: Request, res: Response) => {
         const token = sign({ userId: user._id }, 'your_secret_key', { expiresIn: '1h' });
 
         // Include all user data and the token in the response
-        res.status(200).json({ 
+        res.status(200).json({
             user: {
                 _id: user._id.toString(),
                 Name: user.Name,
@@ -86,7 +88,7 @@ router.post('/login', async (req: Request, res: Response) => {
                 Role: user.Role
                 // Add more fields if needed
             },
-            
+
         });
     } catch (error) {
         console.error('Error logging in:', error);
@@ -94,4 +96,49 @@ router.post('/login', async (req: Request, res: Response) => {
     }
 });
 
+
+
+// Campaign Add route
+router.post('/addcamp', async (req: Request, res: Response) => {
+    try {
+        const { campaignName, campaignImage, organizationName, goalAmount, status, startDate, endDate, description } = req.body;
+
+        // Create new campaign
+        const newCampaign: ICampaign = new Campaign({
+            campaignName,
+            campaignImage,
+            organizationName,
+            goalAmount,
+            status,
+            startDate,
+            endDate,
+            description
+        });
+
+        // Save the campaign to the database
+        const savedCampaign = await newCampaign.save();
+
+        res.status(201).json({ message: 'Campaign added successfully' });
+    } catch (error) {
+        console.error('Error adding campaign:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+// Campaign get route
+router.get('/', async (req: Request, res: Response) => {
+    try {
+        // Query all campaigns from the database
+        const campaigns = await Campaign.find();
+
+        res.status(200).json({ campaigns });
+    } catch (error) {
+        console.error('Error retrieving campaigns:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+//here i will add dashboard posts
+
 export default router;
+
