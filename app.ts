@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import { User } from './models/Users';
 import { Campaign } from './models/campaigns';
+import postsRoutes from './routes/posts';
 import campaignRoutes from './routes/posts'; // Import the campaign routes
 import cors from 'cors';
 
@@ -11,9 +12,14 @@ const port = 3000;
 // Middleware
 app.use(express.json()); // Use built-in JSON parsing middleware
 app.use(cors({ origin: 'http://localhost:4200' }));
+app.use('/posts', postsRoutes);
 
 // MongoDB connection URI 
 const mongoURI = 'mongodb+srv://imansalameh:iman2002@cluster1.xttal40.mongodb.net/?retryWrites=true&w=majority&appName=Cluster1';
+
+const corsOptions = {
+  origin: 'http://localhost:4200',
+};
 
 // Connect to MongoDB
 mongoose.connect(mongoURI)
