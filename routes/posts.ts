@@ -5,6 +5,7 @@ import { IUser, User } from '../models/Users';
 import { sign } from 'jsonwebtoken';
 
 import { ICampaign, Campaign } from '../models/campaigns';
+import { Donation } from '../models/donation';
 
 const router = Router();
 
@@ -101,7 +102,7 @@ router.post('/login', async (req: Request, res: Response) => {
 // Campaign Add route
 router.post('/addcamp', async (req: Request, res: Response) => {
     try {
-        const { campaignName, campaignImage, organizationName, goalAmount, status, startDate, endDate, description } = req.body;
+        const { campaignName, campaignImage, organizationName, goalAmount, status, startDate, endDate, description, usre_id } = req.body;
 
         // Create new campaign
         const newCampaign: ICampaign = new Campaign({
@@ -138,7 +139,59 @@ router.get('/', async (req: Request, res: Response) => {
     }
 });
 
-//here i will add dashboard posts
+
+
+// Route to make a donation
+router.post('/donate', async (req: Request, res: Response) => {
+    try {
+        const { userId, campaignId, amount } = req.body;
+
+        // Create a new donation
+        const newDonation = new Donation({
+            user: userId,
+            campaign: campaignId,
+            amount
+        });
+
+        // Save the donation
+        const savedDonation = await newDonation.save();
+
+        res.status(201).json({ message: 'Donation made successfully', donation: savedDonation });
+    } catch (error) {
+        console.error('Error making donation:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+// Route to get donations for a specific user
+router.get('/user/:userId', async (req: Request, res: Response) => {
+    try {
+        const userId = req.params.userId;
+
+        // Find donations for the specified user
+        const donations = await Donation.find({ user: userId }).populate('campaign');
+
+        res.status(200).json({ donations });
+    } catch (error) {
+        console.error('Error retrieving donations:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+// Route to get donations for a specific campaign
+router.get('/campaign/:campaignId', async (req: Request, res: Response) => {
+    try {
+        const campaignId = req.params.campaignId;
+
+        // Find donations for the specified campaign
+        const donations = await Donation.find({ campaign: campaignId }).populate('user');
+
+        res.status(200).json({ donations });
+    } catch (error) {
+        console.error('Error retrieving donations:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
 
 export default router;
 

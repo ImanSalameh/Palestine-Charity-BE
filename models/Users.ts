@@ -8,11 +8,11 @@ export interface IUser extends Document {
     Address: string;
     Badges?: Record<string, any>; // Assuming badges are stored as an object
     Age: Date;
-    Donationrecords:{type:Object};
-    favorite:{type:Object};
+    Donationrecords: { type: Object };
+    favorite: { type: Object };
     PhoneNumber: string;
     Email: string;
-    Password:string;
+    Password: string;
     Role: string; // Include Role field here
 }
 // Base User schema
@@ -20,15 +20,15 @@ const userSchema: Schema<IUser> = new Schema<IUser>({
 
     Name: { type: String },
     token: { type: Number },
-    Address: { type: String},
+    Address: { type: String },
     //title,description,date,image
     Badges: { type: Object },
-    Age: { type: Date},
+    Age: { type: Date },
     //Class of Drec(nameofcampaign(string),paymentMethod())
-    Donationrecords:{type:Object},
+    Donationrecords: { type: Object },
     //campaign(name,description)
-    favorite:{type:Object},
-    PhoneNumber: { type: String},
+    favorite: { type: Object },//campID STRING
+    PhoneNumber: { type: String },
     Email: { type: String },
     Password: { type: String },
     Role: { type: String } // Define Role field here
