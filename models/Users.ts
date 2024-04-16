@@ -10,7 +10,7 @@ export interface IUser extends Document {
     Address: string;
     Badges?: Record<string, any>;
     Age: Date;
-    //Donationrecords: [{ type: Schema.Types.ObjectId; ref: 'donation' }]; // Update Donationrecords field
+    Donationrecords: [{ type: Schema.Types.ObjectId; ref: 'donation' }]; // Update Donationrecords field
     favorite: { type: Object };
     PhoneNumber: string;
     Email: string;
@@ -25,7 +25,7 @@ const userSchema: Schema<IUser> = new Schema<IUser>({
     Address: { type: String },
     Badges: { type: Object },
     Age: { type: Date },
-    //Donationrecords: [{ type: Schema.Types.ObjectId, ref: 'donation' }], // Updated Donationrecords field
+    Donationrecords: [{ type: Schema.Types.ObjectId, ref: 'donation' }], // Updated Donationrecords field
     favorite: { type: Object },
     PhoneNumber: { type: String },
     Email: { type: String },

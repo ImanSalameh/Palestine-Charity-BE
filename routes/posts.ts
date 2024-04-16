@@ -9,10 +9,9 @@ import { Donation } from '../models/donation';
 
 const router = Router();
 
-// Register route
 router.post('/register', async (req: Request, res: Response) => {
     try {
-        const { Name, Email, Password, Age, PhoneNumber, Address } = req.body;
+        const { Name, Email, Password, Age, PhoneNumber, Address, Badges, Token, favorite, Role } = req.body;
 
         // Check if email field is provided
         if (!Email) {
@@ -29,14 +28,19 @@ router.post('/register', async (req: Request, res: Response) => {
         // Hash the password
         const hashedPassword = await bcrypt.hash(Password, 10);
 
-        // Create new user without specifying UserID
+
         const newUser: IUser = new User({
             Name,
             Email,
             Password: hashedPassword,
             Age,
             PhoneNumber,
-            Address
+            Address,
+            Badges,
+            Token,
+            favorite,
+            Role,
+            Donationrecords: [] // Initialize as an empty array
         });
 
         // Save the user to the database
@@ -47,13 +51,15 @@ router.post('/register', async (req: Request, res: Response) => {
 
         // Include the auto-generated _id and token in the response
         res.status(201).json({
-            message: 'User registered successfully'
+            message: 'User registered successfully',
+            user: savedUser // Optionally, you can return the saved user object in the response
         });
     } catch (error) {
         console.error('Error registering user:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 });
+
 
 // Login route
 router.post('/login', async (req: Request, res: Response) => {
@@ -86,6 +92,9 @@ router.post('/login', async (req: Request, res: Response) => {
                 Age: user.Age,
                 PhoneNumber: user.PhoneNumber,
                 Address: user.Address,
+                Badges: user.Badges,
+                Token: user.token,
+                favorite: user.favorite,
                 Role: user.Role
                 // Add more fields if needed
             },
@@ -186,9 +195,14 @@ router.get('/user/:userId', async (req: Request, res: Response) => {
                 Address: user.Address,
                 Age: user.Age,
                 Email: user.Email,
-                // Add more user fields as needed
+                token: user.token,
+                Badges: user.Badges,
+                favorite: user.favorite,
+                PhoneNumber: user.PhoneNumber,
+                Role: user.Role,
+                Donationrecords: [donations]
             },
-            donations
+            //donations
         };
 
         // Send the response
