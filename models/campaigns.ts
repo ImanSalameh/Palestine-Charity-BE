@@ -34,4 +34,8 @@ const campaignSchema: Schema<ICampaign> = new Schema<ICampaign>({
 });
 
 
+
+
+
+
 export const Campaign = mongoose.model<ICampaign>('Campaign', campaignSchema);

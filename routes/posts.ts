@@ -244,5 +244,42 @@ router.get('/campaign/:campaignId', async (req: Request, res: Response) => {
 });
 
 
+//pagination
+router.get('/campaigns/:page', async (req, res) => {
+    try {
+        const page = parseInt(req.params.page); // Extract page number from URL parameter
+        const pageSize = 10; // Number of campaigns per page
+
+        if (isNaN(page) || page < 1) {
+            return res.status(400).json({ message: 'Invalid page number' });
+        }
+
+
+        const skip = (page - 1) * pageSize; //This calculates how many items to skip in order to reach the desired page
+
+        // Fetch campaigns for the specified page
+        const campaigns = await Campaign.find()
+            .skip(skip)
+            .limit(pageSize);
+
+        if (campaigns.length === 0 && page > 1) { //This condition checks if there are no campaigns found for the requested page. the number of page requested is greater than 1 and there is no more campaigns
+            return res.status(404).json({ message: 'Page not found' });
+        }
+
+        res.status(200).json({
+            campaigns,
+            currentPage: page
+        });
+    } catch (error) {
+        console.error('Error retrieving campaigns:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
+
+
+
 export default router;
 
+console.log("yyyyyyyyyyyyayyyy")
