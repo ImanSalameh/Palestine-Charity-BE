@@ -1,38 +1,43 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import bcrypt from 'bcrypt';
 // Base User interface
-export interface IUser extends Document {
 
+
+// Define interface for User document
+export interface IUser extends Document {
     Name: string;
     token: number;
     Address: string;
-    Badges?: Record<string, any>; // Assuming badges are stored as an object
+    Badges?: Record<string, any>;
     Age: Date;
-    Donationrecords:{type:Object};
-    favorite:{type:Object};
+    Donationrecords: [{ type: Schema.Types.ObjectId; ref: 'donation' }]; // Update Donationrecords field
+    favorite: { type: Object };
     PhoneNumber: string;
     Email: string;
-    Password:string;
-    Role: string; // Include Role field here
+    Password: string;
+    Role: string;
 }
-// Base User schema
-const userSchema: Schema<IUser> = new Schema<IUser>({
 
+// Define schema for User
+const userSchema: Schema<IUser> = new Schema<IUser>({
     Name: { type: String },
     token: { type: Number },
-    Address: { type: String},
-    //title,description,date,image
+    Address: { type: String },
     Badges: { type: Object },
-    Age: { type: Date},
-    //Class of Drec(nameofcampaign(string),paymentMethod())
-    Donationrecords:{type:Object},
-    //campaign(name,description)
-    favorite:{type:Object},
-    PhoneNumber: { type: String},
+    Age: { type: Date },
+    Donationrecords: [{ type: Schema.Types.ObjectId, ref: 'donation' }], // Updated Donationrecords field
+    favorite: { type: Object },
+    PhoneNumber: { type: String },
     Email: { type: String },
     Password: { type: String },
-    Role: { type: String } // Define Role field here
+    Role: { type: String }
 }, { discriminatorKey: 'type' });
+
+
+
+
+
+
 
 
 // Organization interface
