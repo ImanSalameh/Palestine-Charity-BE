@@ -168,30 +168,81 @@ router.get('/user/:userId', async (req: Request, res: Response) => {
     try {
         const userId = req.params.userId;
 
-        // Find donations for the specified user
+        // Find the user by ID
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Find donations for the specified user and populate the campaign field with the campaign object
         const donations = await Donation.find({ user: userId }).populate('campaign');
 
-        res.status(200).json({ donations });
+        // Construct the response object containing user information and donations
+        const responseData = {
+            user: {
+                _id: user._id,
+                Name: user.Name,
+                Address: user.Address,
+                Age: user.Age,
+                Email: user.Email,
+                // Add more user fields as needed
+            },
+            donations
+        };
+
+        // Send the response
+        res.status(200).json(responseData);
     } catch (error) {
         console.error('Error retrieving donations:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 });
+
+
+
+
+
 
 // Route to get donations for a specific campaign
 router.get('/campaign/:campaignId', async (req: Request, res: Response) => {
     try {
         const campaignId = req.params.campaignId;
 
-        // Find donations for the specified campaign
+        // Find the campaign by ID
+        const campaign = await Campaign.findById(campaignId);
+
+        if (!campaign) {
+            return res.status(404).json({ message: 'Campaign not found' });
+        }
+
+
         const donations = await Donation.find({ campaign: campaignId }).populate('user');
 
-        res.status(200).json({ donations });
+
+        const responseData = {
+            campaign: {
+                _id: campaign._id,
+                campaignName: campaign.campaignName,
+                campaignImage: campaign.campaignImage,
+                organizationName: campaign.organizationName,
+                goalAmount: campaign.goalAmount,
+                status: campaign.status,
+                startDate: campaign.startDate,
+                endDate: campaign.endDate,
+
+            },
+            donations
+        };
+
+        // Send the response
+        res.status(200).json(responseData);
     } catch (error) {
         console.error('Error retrieving donations:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 });
+
 
 export default router;
 
