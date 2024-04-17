@@ -1,8 +1,20 @@
-### Request 2: Create a New User ###
+### Request 1: Create a New User ###
 POST http://localhost:3000/posts/login
 Content-Type: application/json
 
 {
-  "Email": "A@gmail.com",
-  "Password": "98986544"
+  "Email": "Mohammadshr@gmail.com",
+  "Password": "1200643"
 }
+
+### Request 2: Create a New User ###
+POST http://localhost:3000/posts/register
+Content-Type: application/json
+
+{
+  "Email": "moeshai@gmail.com",
+  "Password": "1234"
+}
+
+### Request 2: get campaigns###
+GET http://localhost:3000/posts/campaigns?page=2&limit=2

@@ -259,16 +259,17 @@ router.get('/campaign/:campaignId', async (req: Request, res: Response) => {
 
 
 //pagination
-router.get('/campaigns/:page', async (req, res) => {
+router.get('/campaigns', async (req, res) => {
     try {
-        const page = parseInt(req.params.page); // Extract page number from URL parameter
-        const pageSize = 10; // Number of campaigns per page
-
+        let page: number = parseInt(req.query.page as string, 10);
         if (isNaN(page) || page < 1) {
-            return res.status(400).json({ message: 'Invalid page number' });
+            page = 1;
         }
 
-
+        let pageSize= parseInt(req.query.limit as string, 10)
+        if (isNaN(pageSize) || pageSize < 1) {
+            pageSize = 10;
+        }
         const skip = (page - 1) * pageSize; //This calculates how many items to skip in order to reach the desired page
 
         // Fetch campaigns for the specified page
