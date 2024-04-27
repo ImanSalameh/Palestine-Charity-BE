@@ -12,11 +12,11 @@ export interface ICampaign extends Document {
     organizationName: string;
     goalAmount: number;
     status: "Active" | "Suspended" | "Ended";
-    currentAmount?: number;
+    currentAmount: number;
     startDate: Date;
     endDate: Date;
     leaderboard: IDonor[];
-    description?: string;
+    description: string;
 }
 
 // Define schema for Campaign
