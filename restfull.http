@@ -17,4 +17,4 @@ Content-Type: application/json
 }
 
 ### Request 2: get campaigns###
-GET http://localhost:3000/posts/campaigns?page=2&limit=2
+GET http://localhost:3000/posts/campaign/662cf869bc1e80d9f47ef3ab

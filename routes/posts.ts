@@ -246,7 +246,7 @@ router.get('/campaign/:campaignId', async (req: Request, res: Response) => {
                 status: campaign.status,
                 startDate: campaign.startDate,
                 endDate: campaign.endDate,
-                describtion: campaign.description
+                description: campaign.description
 
             },
             donations
