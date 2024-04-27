@@ -52,7 +52,7 @@ router.post('/register', async (req: Request, res: Response) => {
         // Include the auto-generated _id and token in the response
         res.status(201).json({
             message: 'User registered successfully',
-            user: savedUser // Optionally, you can return the saved user object in the response
+
         });
     } catch (error) {
         console.error('Error registering user:', error);
@@ -111,13 +111,14 @@ router.post('/login', async (req: Request, res: Response) => {
 // Campaign Add route
 router.post('/addcamp', async (req: Request, res: Response) => {
     try {
-        const { campaignName, campaignImage, organizationName, goalAmount, status, startDate, endDate, description, usre_id } = req.body;
+        const { campaignName, campaignImage, organizationName, currentAmount, goalAmount, status, startDate, endDate, description, usre_id } = req.body;
 
         // Create new campaign
         const newCampaign: ICampaign = new Campaign({
             campaignName,
             campaignImage,
             organizationName,
+            currentAmount,
             goalAmount,
             status,
             startDate,
@@ -240,10 +241,12 @@ router.get('/campaign/:campaignId', async (req: Request, res: Response) => {
                 campaignName: campaign.campaignName,
                 campaignImage: campaign.campaignImage,
                 organizationName: campaign.organizationName,
+                currentAmount: campaign.currentAmount,
                 goalAmount: campaign.goalAmount,
                 status: campaign.status,
                 startDate: campaign.startDate,
                 endDate: campaign.endDate,
+                describtion: campaign.description
 
             },
             donations
@@ -267,6 +270,7 @@ router.get('/campaigns', async (req, res) => {
         }
 
         let pageSize= parseInt(req.query.limit as string, 10)
+
         if (isNaN(pageSize) || pageSize < 1) {
             pageSize = 10;
         }
@@ -298,3 +302,4 @@ router.get('/campaigns', async (req, res) => {
 export default router;
 
 console.log("yyyyyyyyyyyyayyyy")
+
