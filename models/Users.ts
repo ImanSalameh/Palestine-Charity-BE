@@ -8,7 +8,7 @@ export interface IUser extends Document {
     Name: string;
     token: number;
     Address: string;
-    Badges?: Record<string, any>;
+    Badges: Record<string, any>;
     Age: Date;
     Donationrecords: [{ type: Schema.Types.ObjectId; ref: 'donation' }]; // Update Donationrecords field
     favorite: { type: Object };
@@ -32,11 +32,6 @@ const userSchema: Schema<IUser> = new Schema<IUser>({
     Password: { type: String },
     Role: { type: String }
 }, { discriminatorKey: 'type' });
-
-
-
-
-
 
 
 

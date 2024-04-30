@@ -96,7 +96,7 @@ router.post('/login', async (req: Request, res: Response) => {
                 Token: user.token,
                 favorite: user.favorite,
                 Role: user.Role
-                // Add more fields if needed
+
             },
 
         });
@@ -150,7 +150,6 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 
-
 // Route to make a donation
 router.post('/donate', async (req: Request, res: Response) => {
     try {
@@ -160,11 +159,34 @@ router.post('/donate', async (req: Request, res: Response) => {
         const newDonation = new Donation({
             user: userId,
             campaign: campaignId,
-            amount
+            amount: amount
         });
 
         // Save the donation
         const savedDonation = await newDonation.save();
+
+        // Fetch the campaign document
+        const campaign = await Campaign.findById(campaignId);
+        if (!campaign) {
+            return res.status(404).json({ message: 'Campaign not found' });
+        }
+
+        // Update the current amount of the campaign
+        campaign.currentAmount += amount;
+        await campaign.save();
+
+        // Calculate tokens earned based on donation amount
+        const tokensEarned = amount * 10;
+
+        // Update the user's token balance
+        await User.findByIdAndUpdate(userId, { $inc: { token: tokensEarned } });
+
+        // Update the user's donation records
+        const user: IUser | null = await User.findById(userId);
+        if (user) {
+            user.Donationrecords.push(savedDonation._id);
+            await user.save();
+        }
 
         res.status(201).json({ message: 'Donation made successfully', donation: savedDonation });
     } catch (error) {
@@ -172,6 +194,40 @@ router.post('/donate', async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 });
+
+
+// route for fetching user tokens
+router.get('/tokens/:userId', async (req, res) => {
+    try {
+        const userId = req.params.userId;
+
+        // Retrieve the user from the database
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Retrieve the user's donations from the database
+        const donations = await Donation.find({ user: userId });
+
+        // Calculate the total tokens that earned from donations
+        let totalTokens = 0;
+        for (const donation of donations) {
+            totalTokens += donation.tokens || 0;
+        }
+
+        // Return the total tokens earned
+        res.status(200).json({ userId, totalTokens });
+    } catch (error) {
+        console.error('Error retrieving user tokens:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
+
+
 
 // Route to get donations for a specific user
 router.get('/user/:userId', async (req: Request, res: Response) => {
@@ -269,7 +325,7 @@ router.get('/campaigns', async (req, res) => {
             page = 1;
         }
 
-        let pageSize= parseInt(req.query.limit as string, 10)
+        let pageSize = parseInt(req.query.limit as string, 10)
 
         if (isNaN(pageSize) || pageSize < 1) {
             pageSize = 10;

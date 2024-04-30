@@ -15,7 +15,7 @@ export interface ICampaign extends Document {
     currentAmount: number;
     startDate: Date;
     endDate: Date;
-    leaderboard: IDonor[];
+    leaderboard: IDonor[]; //  اسم الدونر والمبلغ الاجمالي الي تبرع في بهاي الكامبين
     description: string;
 }
 
@@ -39,3 +39,15 @@ const campaignSchema: Schema<ICampaign> = new Schema<ICampaign>({
 
 
 export const Campaign = mongoose.model<ICampaign>('Campaign', campaignSchema);
+
+
+    //donation date
+    //for every amount of donation * 10 (token) -> مثلا اذا تبرع ب 10 دولار منعطي 100 توكين
+    //check badges -> مثلا اذا تبرع ب 1000 توكن منعطي بادج معينة او مثلا اذا تبرع ب الفين 
+    //payment method (string)
+    // ولازم لما يعمل دونيشين نزيد على ال الكرنت اماونت والليدر بورد
+    //وهاد كلو لازم يكون بالدونيشين ريكورد عند اليوزر
+
+
+    //badge -> pic and description, date , aquired (boolean) , user
+    //api for every donor   chart  عدد المتبرعين والبلد ,ونسبة التبرع عشان ترجع لل
