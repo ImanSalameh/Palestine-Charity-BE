@@ -4,6 +4,7 @@ import { User } from './models/Users';
 import { Campaign } from './models/campaigns';
 import postsRoutes from './routes/posts';
 import campaignRoutes from './routes/posts'; // Correct import
+import { Badge } from './models/badge';
 import cors from 'cors';
 
 const app = express();

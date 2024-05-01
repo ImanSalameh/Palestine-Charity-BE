@@ -41,9 +41,13 @@ export const Donation = mongoose.model<IDonation>('Donation', donationSchema);
     //وهاد كلو لازم يكون بالدونيشين ريكورد عند اليوزر  DONE
 
 
-   //badge -> pic and description, date , aquired (boolean) , user
-   //check badges -> مثلا اذا تبرع ب 1000 توكن منعطي بادج معينة او مثلا اذا تبرع ب الفين 
+   //badge -> pic and description, date , aquired (boolean) , user   DONE
+   //check badges -> مثلا اذا تبرع ب 1000 توكن منعطي بادج معينة او مثلا اذا تبرع ب الفين DONE
   
-    //api for every donor   chart  عدد المتبرعين والبلد ,ونسبة التبرع عشان ترجع لل
+    
+//api for every donor   chart  عدد المتبرعين والبلد ,ونسبة التبرع عشان ترجع لل
+//leaderboard
+//favorit
+
 
    
