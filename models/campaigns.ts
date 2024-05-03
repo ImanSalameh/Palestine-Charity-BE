@@ -1,7 +1,8 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import { IUser } from './Users';
 import { IDonor } from './Users';
-// Define interface for Donor
+
+
 
 
 // Define interface for Campaign document
@@ -25,7 +26,7 @@ const campaignSchema: Schema<ICampaign> = new Schema<ICampaign>({
     organizationName: { type: String, required: true },
     goalAmount: { type: Number, required: true },
     status: { type: String, enum: ["Active", "Suspended", "Ended"], required: true },
-    currentAmount: { type: Number },
+    currentAmount: { type: Number, default: 0 }, // Set initial value to 0
     startDate: { type: Date, required: true },
     endDate: { type: Date, required: true },
     leaderboard: { type: [{ userId: String, amountDonated: Number }], default: [] },

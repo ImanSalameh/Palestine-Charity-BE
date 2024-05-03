@@ -60,7 +60,7 @@ export const Donation = mongoose.model<IDonation>('Donation', donationSchema);
 //connect everything with the donation tokens and badges DONE
 
 
-//leaderboard top 10 donores for every campaign who paid more
+//leaderboard top 10 donores for every campaign who paid more DONEEEEEEEE
 
 //api for every donor   chart  عدد المتبرعين والبلد ,ونسبة التبرع عشان ترجع لل
 

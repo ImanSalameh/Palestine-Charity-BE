@@ -86,6 +86,8 @@ router.post('/login', async (req: Request, res: Response) => {
 
         // Generate a token for the user
         const token = sign({ userId: user._id }, 'your_secret_key', { expiresIn: '1h' });
+        const userId = req.params.userId;
+        const donations = await Donation.find({ user: userId });
 
         // Include all user data and the token in the response
         res.status(200).json({
@@ -99,7 +101,8 @@ router.post('/login', async (req: Request, res: Response) => {
                 Badges: user.Badges,
                 Token: user.token,
                 favorite: user.favorite,
-                Role: user.Role
+                Role: user.Role,
+                Donationrecords: donations
 
             },
 
@@ -143,15 +146,15 @@ router.post('/addcamp', async (req: Request, res: Response) => {
     }
 });
 
-
-
 // Campaign get route
 router.get('/', async (req: Request, res: Response) => {
     try {
-        // Query all campaigns from the database
-        const campaigns = await Campaign.find();
+        // Query all campaigns from the database, excluding the leaderboard field
+        const campaigns = await Campaign.find({}, '-leaderboard');
 
         res.status(200).json({ campaigns });
+
+
     } catch (error) {
         console.error('Error retrieving campaigns:', error);
         res.status(500).json({ message: 'Internal server error' });
@@ -257,6 +260,7 @@ router.get('/tokens/:userId', async (req, res) => {
     try {
         const userId = req.params.userId;
 
+
         // Retrieve the user from the database
         const user = await User.findById(userId);
 
@@ -274,7 +278,7 @@ router.get('/tokens/:userId', async (req, res) => {
         }
 
         // Return the total tokens earned
-        res.status(200).json({ userId, totalTokens });
+        res.status(200).json({ userId, userName: user.Name, totalTokens });
     } catch (error) {
         console.error('Error retrieving user tokens:', error);
         res.status(500).json({ message: 'Internal server error' });
@@ -331,6 +335,7 @@ router.post('/donate', async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 });
+
 
 
 
@@ -469,6 +474,70 @@ router.get('/user-badges/:userId', async (req, res) => {
 
 
 
+//to get all favorite campaigns of a user
+router.get('/favorite-campaigns/:userId', async (req: Request, res: Response) => {
+    try {
+        const userId = req.params.userId;
+
+        const user = await User.findById(userId).populate('favorite');
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Ensure user.favorite is recognized as an array of ICampaign objects
+        if (user.favorite instanceof Array) {
+            const favoriteCampaigns: ICampaign[] = user.favorite;
+            return res.status(200).json({ favoriteCampaigns });
+        } else {
+            return res.status(500).json({ message: 'User favorite is not an array' });
+        }
+    } catch (error) {
+        console.error('Error getting favorite campaigns:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
+//adding favorit campaign
+router.post('/add-favorite', async (req: Request, res: Response) => {
+    try {
+        const { userId, campaignId } = req.body;
+
+        // Find the user by ID
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Find the campaign by ID
+        const campaign = await Campaign.findById(campaignId);
+
+        if (!campaign) {
+            return res.status(404).json({ message: 'Campaign not found' });
+        }
+
+        // Check if the campaign already exists in the user's favorites
+        if (user.favorite.some(favorite => favorite.equals(campaign._id))) {
+            return res.status(400).json({ message: 'Campaign already exists in favorites' });
+        }
+
+        // Add the campaign object to the user's favorite campaigns array
+        user.favorite.push(campaign);
+
+        // Save the user document
+        await user.save();
+
+        res.status(200).json({ message: 'Campaign added to favorites successfully' });
+    } catch (error) {
+        console.error('Error adding campaign to favorites:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
+
 router.delete('/remove-favorite/:userId/:campaignId', async (req: Request, res: Response) => {
     try {
         const userId = req.params.userId;
@@ -508,43 +577,6 @@ router.delete('/remove-favorite/:userId/:campaignId', async (req: Request, res: 
 
 
 
-
-//adding favorit campaign
-router.post('/add-favorite', async (req: Request, res: Response) => {
-    try {
-        const { userId, campaignId } = req.body;
-
-        // Find the user by ID
-        const user = await User.findById(userId);
-
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-
-        // Find the campaign by ID
-        const campaign = await Campaign.findById(campaignId);
-
-        if (!campaign) {
-            return res.status(404).json({ message: 'Campaign not found' });
-        }
-
-        // Check if the campaign already exists in the user's favorites
-        if (user.favorite.some(favorite => favorite.equals(campaign._id))) {
-            return res.status(400).json({ message: 'Campaign already exists in favorites' });
-        }
-
-        // Add the campaign object to the user's favorite campaigns array
-        user.favorite.push(campaign);
-
-        // Save the user document
-        await user.save();
-
-        res.status(200).json({ message: 'Campaign added to favorites successfully' });
-    } catch (error) {
-        console.error('Error adding campaign to favorites:', error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
-});
 
 
 
@@ -590,7 +622,7 @@ router.get('/campaign/:campaignId', async (req, res) => {
             donations
         };
 
-        res.status(200).json({ message: 'Donation received and leaderboard updated successfully', responseData });
+        res.status(200).json(responseData);
     } catch (error) {
         console.error('Error handling donation and updating leaderboard:', error);
         res.status(500).json({ message: 'Internal server error' });
@@ -734,6 +766,21 @@ router.post('/creatBadge', async (req: Request, res: Response) => {
         res.status(201).json({ message: 'Badge awarded successfully', badge: savedBadge });
     } catch (error) {
         console.error('Error awarding badge:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
+
+// Campaign get route
+router.get('/', async (req: Request, res: Response) => {
+    try {
+        // Query all campaigns from the database
+        const campaigns = await Campaign.find();
+
+        res.status(200).json({ campaigns });
+    } catch (error) {
+        console.error('Error retrieving campaigns:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 });
