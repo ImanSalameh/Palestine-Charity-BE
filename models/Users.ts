@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import bcrypt from 'bcrypt';
-// Base User interface
+import { ICampaign } from './campaigns';
+import { IBadge, Badge } from '../models/badge';
 
 
 // Define interface for User document
@@ -8,10 +9,10 @@ export interface IUser extends Document {
     Name: string;
     token: number;
     Address: string;
-    Badges: Record<string, any>;
+    Badges: IBadge[]; //array of badges , when the user get the badge will push it here
     Age: Date;
     Donationrecords: [{ type: Schema.Types.ObjectId; ref: 'donation' }]; // Update Donationrecords field
-    favorite: { type: Object };
+    favorite: ICampaign[];
     PhoneNumber: string;
     Email: string;
     Password: string;
@@ -23,15 +24,35 @@ const userSchema: Schema<IUser> = new Schema<IUser>({
     Name: { type: String },
     token: { type: Number },
     Address: { type: String },
-    Badges: { type: Object },
+    Badges: [{ type: Schema.Types.ObjectId, ref: 'Badge' }],
     Age: { type: Date },
     Donationrecords: [{ type: Schema.Types.ObjectId, ref: 'donation' }], // Updated Donationrecords field
-    favorite: { type: Object },
+    favorite: [{ type: Schema.Types.ObjectId, ref: 'Campaign' }],
     PhoneNumber: { type: String },
     Email: { type: String },
     Password: { type: String },
     Role: { type: String }
 }, { discriminatorKey: 'type' });
+
+
+// Donor interface
+export interface IDonor extends IUser {
+    DonorID: string;
+    amountDonated: number;
+    DonorName: string;
+    PaymentMethod: string;
+    Gender: string;
+}
+
+// Donor schema (inherits from User)
+const donorSchema: Schema<IDonor> = new Schema<IDonor>({
+    DonorID: { type: String, required: true },
+    amountDonated: { type: Number, required: true },
+    DonorName: { type: String, required: true },
+    PaymentMethod: { type: String, required: true },
+    Gender: { type: String, required: true },
+});
+
 
 
 
@@ -83,21 +104,7 @@ const influencerSchema: Schema<IInfluencer> = new Schema<IInfluencer>({
     Contract: { type: String, required: true },
 });
 
-// Donor interface
-export interface IDonor extends IUser {
-    DonorID: number;
-    DonorName: string;
-    PaymentMethod: string;
-    Gender: string;
-}
 
-// Donor schema (inherits from User)
-const donorSchema: Schema<IDonor> = new Schema<IDonor>({
-    DonorID: { type: Number, required: true },
-    DonorName: { type: String, required: true },
-    PaymentMethod: { type: String, required: true },
-    Gender: { type: String, required: true },
-});
 
 // Create models
 export const User = mongoose.model<IUser>('User', userSchema);

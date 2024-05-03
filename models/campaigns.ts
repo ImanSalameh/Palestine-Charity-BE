@@ -1,9 +1,8 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import { IUser } from './Users';
+import { IDonor } from './Users';
 // Define interface for Donor
-export interface IDonor {
-    userId: string;
-    amountDonated: number;
-}
+
 
 // Define interface for Campaign document
 export interface ICampaign extends Document {

@@ -1,9 +1,9 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { IUser, User } from '../models/Users';
+import { IUser, User, IDonor } from '../models/Users';
 import { sign } from 'jsonwebtoken';
-
+import mongoose from 'mongoose';
 import { ICampaign, Campaign } from '../models/campaigns';
 import { Donation } from '../models/donation';
 import { IBadge, Badge } from '../models/badge';
@@ -162,52 +162,6 @@ router.get('/', async (req: Request, res: Response) => {
 
 
 
-// Route to make a donation
-router.post('/donate', async (req: Request, res: Response) => {
-    try {
-        const { userId, campaignId, amount } = req.body;
-
-        // Create a new donation
-        const newDonation = new Donation({
-            user: userId,
-            campaign: campaignId,
-            amount: amount
-        });
-
-        // Save the donation
-        const savedDonation = await newDonation.save();
-
-        // Fetch the campaign document
-        const campaign = await Campaign.findById(campaignId);
-        if (!campaign) {
-            return res.status(404).json({ message: 'Campaign not found' });
-        }
-
-        // Update the current amount of the campaign
-        campaign.currentAmount += amount;
-        await campaign.save();
-
-        // Calculate tokens earned based on donation amount
-        const tokensEarned = amount * 10;
-
-        // Update the user's token balance
-        await User.findByIdAndUpdate(userId, { $inc: { token: tokensEarned } });
-
-        // Update the user's donation records
-        const user: IUser | null = await User.findById(userId);
-        if (user) {
-            user.Donationrecords.push(savedDonation._id);
-            await user.save();
-        }
-
-        res.status(201).json({ message: 'Donation made successfully', donation: savedDonation });
-    } catch (error) {
-        console.error('Error making donation:', error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
-});
-
-
 
 
 // Route to get donations for a specific user
@@ -215,8 +169,8 @@ router.get('/user/:userId', async (req: Request, res: Response) => {
     try {
         const userId = req.params.userId;
 
-        // Find the user by ID
-        const user = await User.findById(userId);
+        // Find the user by ID and populate the badges field
+        const user = await User.findById(userId).populate('Badges');
 
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
@@ -238,7 +192,7 @@ router.get('/user/:userId', async (req: Request, res: Response) => {
                 favorite: user.favorite,
                 PhoneNumber: user.PhoneNumber,
                 Role: user.Role,
-                Donationrecords: [donations]
+                Donationrecords: donations
             },
             //donations
         };
@@ -256,46 +210,7 @@ router.get('/user/:userId', async (req: Request, res: Response) => {
 
 
 
-// Route to get donations for a specific campaign
-router.get('/campaign/:campaignId', async (req: Request, res: Response) => {
-    try {
-        const campaignId = req.params.campaignId;
 
-        // Find the campaign by ID
-        const campaign = await Campaign.findById(campaignId);
-
-        if (!campaign) {
-            return res.status(404).json({ message: 'Campaign not found' });
-        }
-
-
-        const donations = await Donation.find({ campaign: campaignId }).populate('user');
-
-
-        const responseData = {
-            campaign: {
-                _id: campaign._id,
-                campaignName: campaign.campaignName,
-                campaignImage: campaign.campaignImage,
-                organizationName: campaign.organizationName,
-                currentAmount: campaign.currentAmount,
-                goalAmount: campaign.goalAmount,
-                status: campaign.status,
-                startDate: campaign.startDate,
-                endDate: campaign.endDate,
-                description: campaign.description
-
-            },
-            donations
-        };
-
-        // Send the response
-        res.status(200).json(responseData);
-    } catch (error) {
-        console.error('Error retrieving donations:', error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
-});
 
 
 //pagination
@@ -336,8 +251,6 @@ router.get('/campaigns', async (req, res) => {
 
 
 
-
-
 // route for fetching user tokens
 router.get('/tokens/:userId', async (req, res) => {
     try {
@@ -370,30 +283,59 @@ router.get('/tokens/:userId', async (req, res) => {
 
 
 
-
-
-
-router.post('/creatBadge', async (req: Request, res: Response) => {
+// Route to make a donation
+router.post('/donate', async (req: Request, res: Response) => {
     try {
+        const { userId, campaignId, amount } = req.body;
 
-        const { userId, picture, description } = req.body;
-
-        // Create a new badge document
-        const newBadge = new Badge({
+        // Create a new donation
+        const newDonation = new Donation({
             user: userId,
-            picture,
-            description
+            campaign: campaignId,
+            amount: amount
         });
 
-        // Save the badge to the database
-        const savedBadge = await newBadge.save();
+        // Save the donation
+        const savedDonation = await newDonation.save();
 
-        res.status(201).json({ message: 'Badge awarded successfully', badge: savedBadge });
+        // Fetch the campaign document
+        const campaign = await Campaign.findById(campaignId);
+        if (!campaign) {
+            return res.status(404).json({ message: 'Campaign not found' });
+        }
+
+        // Update the current amount of the campaign
+        campaign.currentAmount += amount;
+        await campaign.save();
+
+        // Calculate tokens earned based on donation amount
+        const tokensEarned = amount * 10;
+
+        // Update the user's token balance
+        await User.findByIdAndUpdate(userId, { $inc: { token: tokensEarned } });
+
+        // Update the user's donation records
+        const user: IUser | null = await User.findById(userId);
+        if (user) {
+            user.Donationrecords.push(savedDonation._id);
+            await user.save();
+
+            // Check and award badges to the user
+            await checkAndAwardBadges(userId, user.token); // Assuming token is the field storing user's tokens
+        }
+
+        res.status(201).json({ message: 'Donation made successfully', donation: savedDonation });
     } catch (error) {
-        console.error('Error awarding badge:', error);
+        console.error('Error making donation:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 });
+
+
+
+
+
+
 
 
 // Define badge types and their corresponding token thresholds
@@ -405,31 +347,49 @@ const badgeTypes = [
 
 // Function to check and award badges for a specific user
 async function checkAndAwardBadges(userId: string, userTokens: number) {
-    for (const badgeType of badgeTypes) {
-        if (userTokens >= badgeType.threshold) {
-            // Check if the user already has the badge
-            const userHasBadge = await Badge.findOne({ user: userId, description: badgeType.name });
+    try {
+        // Fetch the user document by userId
+        const user = await User.findById(userId);
 
-            if (!userHasBadge) {
-                // Award the badge to the user
-                const newBadge: IBadge = new Badge({
-                    user: userId,
-                    description: badgeType.name,
-                    badgeName: badgeType.name, // Assuming badgeName is a field in the Badge model
-                    badgePic: getBadgePictureURL(badgeType.name), // Provide the URL or path to the badge picture
-                    date: new Date(),
-                    acquired: false // Set acquired to false initially
-                });
+        if (!user) {
+            console.log(`User not found with ID ${userId}`);
+            return;
+        }
 
-                await newBadge.save();
+        for (const badgeType of badgeTypes) {
+            if (userTokens >= badgeType.threshold) {
+                // Check if the user already has the badge
+                const userHasBadge = await Badge.findOne({ user: userId, description: badgeType.name });
 
-                // Update user profile or badge collection with the new badge
-                await updateUserProfileWithBadge(userId, badgeType.name, getBadgePictureURL(badgeType.name));
+                if (!userHasBadge) {
+                    // Award the badge to the user
+                    const newBadge: IBadge = new Badge({
+                        user: userId,
+                        description: badgeType.name,
+                        badgeName: badgeType.name,
+                        badgePic: getBadgePictureURL(badgeType.name),
+                        date: new Date(),
+                        acquired: true
+                    });
 
-                // Log badge awarding
-                console.log(`Badge "${badgeType.name}" awarded to user ${userId}`);
+                    // Save the new badge document
+                    const savedBadge = await newBadge.save();
+
+                    // Push the ID of the newly created badge into the user's Badges array
+                    user.Badges.push(savedBadge._id);
+
+
+
+                    // Save the user document to update the badges array
+                    await user.save();
+
+                    // Log badge awarding
+                    console.log(`Badge "${badgeType.name}" awarded to user ${userId}`);
+                }
             }
         }
+    } catch (error) {
+        console.error('Error checking and awarding badges:', error);
     }
 }
 
@@ -449,30 +409,6 @@ function getBadgePictureURL(badgeName: string): string {
 }
 
 
-// Function to update user profile or badge collection with the new badge
-async function updateUserProfileWithBadge(userId: string, badgeName: string, badgePic: string) {
-    try {
-        // Find the user by their userId
-        const user = await User.findById(userId);
-
-        if (!user) {
-            console.error('User not found');
-            return;
-        }
-
-        // Update user's profile or badge collection with the new badge
-
-        user.Badges.push(badgeName);
-        user.Badges.push(badgePic);
-
-        // Save the changes to the user document
-        await user.save();
-
-        console.log(`User profile updated with badge: ${badgeName}`);
-    } catch (error) {
-        console.error('Error updating user profile with badge:', error);
-    }
-}
 
 // Route to trigger badge checks for all users
 router.post('/check-badges', async (req: Request, res: Response) => {
@@ -532,6 +468,193 @@ router.get('/user-badges/:userId', async (req, res) => {
 
 
 
+router.delete('/remove-favorite/:userId/:campaignId', async (req: Request, res: Response) => {
+    try {
+        const userId = req.params.userId;
+        const campaignId = req.params.campaignId;
+
+        // Find the user by ID
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Debug logging
+        console.log('User favorite campaigns:', user.favorite);
+        console.log('Campaign ID to remove:', campaignId);
+
+        // Check if the campaign is in the user's favorites
+        const index = user.favorite.findIndex((campaign: ICampaign) => campaign._id.toString() === campaignId);
+
+        if (index === -1) {
+            return res.status(404).json({ message: 'Campaign not found in user favorites' });
+        }
+
+        // Remove the campaign from the favorites array
+        user.favorite.splice(index, 1);
+
+        // Save the updated user object
+        await user.save();
+
+        return res.status(200).json({ message: 'Campaign removed from favorites successfully' });
+    } catch (error) {
+        console.error('Error removing campaign from favorites:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
+
+
+
+//adding favorit campaign
+router.post('/add-favorite', async (req: Request, res: Response) => {
+    try {
+        const { userId, campaignId } = req.body;
+
+        // Find the user by ID
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Find the campaign by ID
+        const campaign = await Campaign.findById(campaignId);
+
+        if (!campaign) {
+            return res.status(404).json({ message: 'Campaign not found' });
+        }
+
+        // Check if the campaign already exists in the user's favorites
+        if (user.favorite.some(favorite => favorite.equals(campaign._id))) {
+            return res.status(400).json({ message: 'Campaign already exists in favorites' });
+        }
+
+        // Add the campaign object to the user's favorite campaigns array
+        user.favorite.push(campaign);
+
+        // Save the user document
+        await user.save();
+
+        res.status(200).json({ message: 'Campaign added to favorites successfully' });
+    } catch (error) {
+        console.error('Error adding campaign to favorites:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
+
+
+//  to handle donation and update the leaderboard for a campaign
+router.get('/campaign/:campaignId', async (req, res) => {
+    try {
+        const campaignId = req.params.campaignId;
+
+        // Find the campaign by ID
+        const campaign = await Campaign.findById(campaignId);
+        if (!campaign) {
+            return res.status(404).json({ message: 'Campaign not found' });
+        }
+
+        // Retrieve donations for the campaign with specified fields from user
+        const donations = await Donation.find({ campaign: campaignId })
+            .populate({
+                path: 'user',
+                select: 'Name Address Email Role' // Specify the fields I want to retrieve
+            });
+
+        // Get the leaderboard for the campaign
+        const leaderboardResult = await getCampaignLeaderboard(campaignId);
+        if (leaderboardResult.error) {
+            return res.status(500).json({ message: 'Error fetching leaderboard: ' + leaderboardResult.error });
+        }
+
+        const responseData = {
+            campaign: {
+                _id: campaign._id,
+                campaignName: campaign.campaignName,
+                campaignImage: campaign.campaignImage,
+                organizationName: campaign.organizationName,
+                currentAmount: campaign.currentAmount,
+                goalAmount: campaign.goalAmount,
+                status: campaign.status,
+                startDate: campaign.startDate,
+                endDate: campaign.endDate,
+                description: campaign.description,
+                leaderboard: leaderboardResult.leaderboard
+            },
+            donations
+        };
+
+        res.status(200).json({ message: 'Donation received and leaderboard updated successfully', responseData });
+    } catch (error) {
+        console.error('Error handling donation and updating leaderboard:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
+
+
+
+// Route to get the leaderboard for a specific campaign
+router.get('/:campaignId/leaderboard', async (req: Request, res: Response) => {
+    try {
+        const campaignId = req.params.campaignId;
+        const result = await getCampaignLeaderboard(campaignId);
+        if (result.error) {
+            return res.status(404).json({ message: result.error });
+        }
+        res.status(200).json(result);
+    } catch (error) {
+        console.error('Error handling request:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
+async function getCampaignLeaderboard(campaignId: string) {
+    try {
+        // Fetch the campaign document
+        const campaign = await Campaign.findById(campaignId);
+        if (!campaign) {
+            return { error: 'Campaign not found' };
+        }
+
+        // Query donation records for the campaign
+        const donationRecords = await Donation.aggregate([
+            { $match: { campaign: mongoose.Types.ObjectId.createFromHexString(campaignId) } },
+            { $group: { _id: "$user", totalDonation: { $sum: "$amount" } } },
+            { $sort: { totalDonation: -1 } },
+            { $limit: 10 } // Limit to top 3 donors
+        ]);
+
+        // Extract user IDs and total donation amounts from donation records
+        const leaderboard = [];
+        for (const donationRecord of donationRecords) {
+            const userId = donationRecord._id;
+            const amountDonated = donationRecord.totalDonation;
+
+            // Populate user names based on user IDs
+            const user = await User.findById(userId);
+            if (user) {
+                leaderboard.push({ userId, userName: user.Name, amountDonated });
+            }
+        }
+
+        return { leaderboard };
+    } catch (error) {
+        console.error('Error fetching campaign leaderboard:', error);
+        return { error: 'Internal server error' };
+    }
+}
+
+
+
+
 
 
 
@@ -540,3 +663,78 @@ export default router;
 
 console.log("yyyyyyyyyyyyayyyy")
 
+
+/*
+// Function to add a campaign to user's favorites
+async function addFavoriteCampaign(userId: string, campaign: ICampaign) {
+    try {
+        const user = await User.findById(userId);
+
+        if (!user) {
+            console.error('User not found');
+            return;
+        }
+
+        // Ensure user.favorite is recognized as an array of ICampaign objects
+        if ((user as IUser).favorite instanceof Array) {
+            (user as IUser).favorite.push(campaign);
+            await user.save();
+
+            console.log(`Campaign added to favorites for user ${userId}`);
+        } else {
+            console.error('User favorite is not an array');
+        }
+    } catch (error) {
+        console.error('Error adding campaign to favorites:', error);
+    }
+}
+
+// Function to remove a campaign from user's favorites
+async function removeFavoriteCampaign(userId: string, campaignId: string) {
+    try {
+        const user = await User.findById(userId);
+
+        if (!user) {
+            console.error('User not found');
+            return;
+        }
+
+        // Ensure user.favorite is recognized as an array of ICampaign objects
+        if ((user as IUser).favorite instanceof Array) {
+            (user as IUser).favorite = (user as IUser).favorite.filter((campaign: ICampaign) => campaign._id !== campaignId);
+            await user.save();
+
+            console.log(`Campaign removed from favorites for user ${userId}`);
+        } else {
+            console.error('User favorite is not an array');
+        }
+    } catch (error) {
+        console.error('Error removing campaign from favorites:', error);
+    }
+}
+
+
+
+router.post('/creatBadge', async (req: Request, res: Response) => {
+    try {
+
+        const { userId, picture, description } = req.body;
+
+        // Create a new badge document
+        const newBadge = new Badge({
+            user: userId,
+            picture,
+            description
+        });
+
+        // Save the badge to the database
+        const savedBadge = await newBadge.save();
+
+        res.status(201).json({ message: 'Badge awarded successfully', badge: savedBadge });
+    } catch (error) {
+        console.error('Error awarding badge:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+*/
