@@ -1,30 +1,32 @@
 import express, { Request, Response } from 'express';
 import mongoose from 'mongoose';
-import postsRoutes from './routes/posts';
 import { User } from './models/Users';
+import { Campaign } from './models/campaigns';
+import postsRoutes from './routes/posts';
+import campaignRoutes from './routes/posts'; // Correct import
 import cors from 'cors';
-const app = express();
-const port=3000;
-// Import routes
-app.use(express.json()); // Use built-in JSON parsing middleware
-const corsOptions = {
-  origin: 'http://localhost:4200',
-};
 
-app.use(cors(corsOptions));
+const app = express();
+const port = 3000;
+
+// Middleware
+app.use(express.json()); // Use built-in JSON parsing middleware
+app.use(cors({ origin: 'http://localhost:4200' }));
 app.use('/posts', postsRoutes);
 
 // MongoDB connection URI 
 const mongoURI = 'mongodb+srv://imansalameh:iman2002@cluster1.xttal40.mongodb.net/?retryWrites=true&w=majority&appName=Cluster1';
 
+const corsOptions = {
+  origin: 'http://localhost:4200',
+};
+
 // Connect to MongoDB
 mongoose.connect(mongoURI)
   .then(() => {
     console.log("Connected to MongoDB");
-    
-    // Define additional routes
-     // Define route to update user role
-     app.get('/updateUserRole', async (req: Request, res: Response) => {
+
+    app.get('/updateUserRole', async (req: Request, res: Response) => {
       try {
         // Find the user with the specified email
         const user = await User.findOne({ Email: 'Mohammadshair@gmail.com' });
@@ -45,7 +47,10 @@ mongoose.connect(mongoURI)
       }
     });
 
-    // Start the Express server after MongoDB connection is established
+    // Use campaign routes
+    app.use('/campaigns', campaignRoutes);
+
+    // Start the Express server
     app.listen(port, () => {
       console.log(`Server is running on port ${port}`);
     });
@@ -55,5 +60,4 @@ mongoose.connect(mongoURI)
     process.exit(1); // Exit the process if there's an error
   });
 
-
-console.log("hi!!");
+console.log("Server started!");
