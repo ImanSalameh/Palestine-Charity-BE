@@ -177,7 +177,11 @@ router.get('/user/:userId', async (req: Request, res: Response) => {
         }
 
         // Find donations for the specified user and populate the campaign field with the campaign object
-        const donations = await Donation.find({ user: userId }).populate('campaign');
+        const donations = await Donation.find({ user: userId })
+            .populate({
+                path: 'campaign',
+                select: '-leaderboard' // Exclude the leaderboard field from the populated campaign object
+            });
 
         // Construct the response object containing user information and donations
         const responseData = {
@@ -204,9 +208,6 @@ router.get('/user/:userId', async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 });
-
-
-
 
 
 
