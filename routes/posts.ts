@@ -1,12 +1,13 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { IUser, User, IDonor } from '../models/Users';
+import { IUser, User } from '../models/Users';
 import { sign } from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import { ICampaign, Campaign } from '../models/campaigns';
 import { Donation } from '../models/donation';
 import { IBadge, Badge } from '../models/badge';
+import { IDonor, Donor } from '../models/Users';
 
 const router = Router();
 
@@ -685,7 +686,55 @@ async function getCampaignLeaderboard(campaignId: string) {
     }
 }
 
+// Define route for donation rate by address
+router.get('/chart', async (req, res) => {
+    try {
+        // Fetch all donation records for all users
+        const donationRecords = await User.aggregate([
+            {
+                $unwind: "$Donationrecords" // Expand Donationrecords array
+            },
+            {
+                $lookup: {
+                    from: "donations", // Collection name
+                    localField: "Donationrecords",
+                    foreignField: "_id",
+                    as: "donationDetails"
+                }
+            },
+            {
+                $unwind: "$donationDetails" // Expand donationDetails array
+            },
+            {
+                $group: {
+                    _id: { address: "$Address", user: "$_id" }, // Group by address and user
+                    totalDonation: { $sum: "$donationDetails.amount" }
+                }
+            },
+            {
+                $group: {
+                    _id: "$_id.address", // Group by address only
+                    totalDonation: { $sum: "$totalDonation" },
+                    numUsers: { $sum: 1 } // Count the number of users in each address
+                }
+            },
+            {
+                $project: {
+                    _id: 0, // Exclude _id field from results
+                    address: "$_id",
+                    totalDonation: 1,
+                    donationRate: { $divide: ["$totalDonation", "$numUsers"] } // Calculate donation rate per user in the same address
+                }
+            }
+        ]);
 
+        // Return the donation rate by address
+        res.json(donationRecords);
+    } catch (error) {
+        console.error('Error fetching donation rate by address:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
 
 
 

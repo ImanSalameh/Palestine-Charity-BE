@@ -14,14 +14,13 @@ export interface IBadge extends Document {
 }
 
 // Define the schema for the Badge document
-const badgeSchema: Schema<IBadge> = new Schema<IBadge>({
+const badgeSchema: Schema<IBadge> = new Schema({
     badgePic: { type: String, required: true },
     badgeName: { type: String, required: true },
     description: { type: String, required: true },
-    date: { type: Date, default: Date.now },
-    acquired: { type: Boolean, default: false }, // Default value for acquired is false
-    user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-
+    date: { type: Date, required: true },
+    acquired: { type: Boolean, required: true },
+    user: { type: Schema.Types.ObjectId, ref: 'User', required: true }
 });
 
 // Create and export the Badge model

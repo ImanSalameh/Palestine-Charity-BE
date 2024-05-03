@@ -9,7 +9,7 @@ export interface IUser extends Document {
     Name: string;
     token: number;
     Address: string;
-    Badges: IBadge[]; //array of badges , when the user get the badge will push it here
+    Badges: IBadge[]; // Use IBadge interface
     Age: Date;
     Donationrecords: [{ type: Schema.Types.ObjectId; ref: 'donation' }]; // Update Donationrecords field
     favorite: ICampaign[];
@@ -24,7 +24,7 @@ const userSchema: Schema<IUser> = new Schema<IUser>({
     Name: { type: String },
     token: { type: Number },
     Address: { type: String },
-    Badges: [{ type: Schema.Types.ObjectId, ref: 'Badge' }],
+    Badges: { type: [Schema.Types.ObjectId], ref: 'Badge', default: [] }, // Use ref to 'Badge' and set default value to empty array
     Age: { type: Date },
     Donationrecords: [{ type: Schema.Types.ObjectId, ref: 'donation' }], // Updated Donationrecords field
     favorite: [{ type: Schema.Types.ObjectId, ref: 'Campaign' }],
@@ -33,7 +33,6 @@ const userSchema: Schema<IUser> = new Schema<IUser>({
     Password: { type: String },
     Role: { type: String }
 }, { discriminatorKey: 'type' });
-
 
 // Donor interface
 export interface IDonor extends IUser {
