@@ -686,6 +686,192 @@ async function getCampaignLeaderboard(campaignId: string) {
     }
 }
 
+
+
+
+
+// Define route for donation rate by address
+router.get('/chart', async (req, res) => {
+    try {
+        // Fetch all donation records for all users
+        const donationRecords = await User.aggregate([
+            {
+                $unwind: "$Donationrecords" // Expand Donationrecords array
+            },
+            {
+                $lookup: {
+                    from: "donations", // Collection name
+                    localField: "Donationrecords",
+                    foreignField: "_id",
+                    as: "donationDetails"
+                }
+            },
+            {
+                $unwind: "$donationDetails" // Expand donationDetails array
+            },
+            {
+                $group: {
+                    _id: { address: "$Address" }, // Group by address
+                    totalDonation: { $sum: "$donationDetails.amount" }
+                }
+            },
+            {
+                $group: {
+                    _id: null, // Group all documents together
+                    totalDonationAllPlaces: { $sum: "$totalDonation" }, // Calculate total donation in all places
+                    places: {
+                        $push: {
+                            address: "$_id.address",
+                            totalDonation: "$totalDonation"
+                        }
+                    }
+                }
+            },
+            {
+                $project: {
+                    _id: 0, // Exclude _id field from results
+                    totalDonationAllPlaces: 1, // Include total donation for all places
+                    places: {
+                        $map: {
+                            input: "$places",
+                            as: "place",
+                            in: {
+                                address: "$$place.address",
+                                totalDonation: "$$place.totalDonation",
+                                donationRate: {
+                                    $multiply: [
+                                        { $divide: ["$$place.totalDonation", "$totalDonationAllPlaces"] },
+                                        100 // Convert to percentage
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        ]);
+
+        if (donationRecords.length === 0) {
+            console.log("No donation records found.");
+            return res.status(404).json({ message: "No donation records found." });
+        }
+
+        // Log the total donation for all places to the console
+        console.log("Total Donation for All Places:", donationRecords[0].totalDonationAllPlaces);
+
+        // Return the donation rate by address including total donation for all places
+        res.json({
+            totalDonationAllPlaces: donationRecords[0].totalDonationAllPlaces,
+            places: donationRecords[0].places
+        });
+    } catch (error) {
+        console.error('Error fetching donation rate by address:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
+
+
+export default router;
+
+console.log("yyyyyyyyyyyyayyyy")
+
+
+
+
+
+
+
+
+
+/*
+
+// Define route for donation rate by address
+router.get('/chart', async (req, res) => {
+    try {
+        // Fetch all donation records for all users
+        const donationRecords = await User.aggregate([
+            {
+                $unwind: "$Donationrecords" // Expand Donationrecords array
+            },
+            {
+                $lookup: {
+                    from: "donations", // Collection name
+                    localField: "Donationrecords",
+                    foreignField: "_id",
+                    as: "donationDetails"
+                }
+            },
+            {
+                $unwind: "$donationDetails" // Expand donationDetails array
+            },
+            {
+                $group: {
+                    _id: { address: "$Address" }, // Group by address
+                    totalDonation: { $sum: "$donationDetails.amount" }
+                }
+            },
+            {
+                $group: {
+                    _id: null, // Group all documents together
+                    totalDonationAllPlaces: { $sum: "$totalDonation" }, // Calculate total donation in all places
+                    places: {
+                        $push: {
+                            address: "$_id.address",
+                            totalDonation: "$totalDonation"
+                        }
+                    }
+                }
+            },
+            {
+                $project: {
+                    _id: 0, // Exclude _id field from results
+                    totalDonationAllPlaces: 1, // Include total donation for all places
+                    places: {
+                        $map: {
+                            input: "$places",
+                            as: "place",
+                            in: {
+                                address: "$$place.address",
+                                totalDonation: "$$place.totalDonation",
+                                donationRate: {
+                                    $multiply: [
+                                        { $divide: ["$$place.totalDonation", "$totalDonationAllPlaces"] },
+                                        100 // Convert to percentage
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        ]);
+
+        if (donationRecords.length === 0) {
+            console.log("No donation records found.");
+            return res.status(404).json({ message: "No donation records found." });
+        }
+
+        // Log the total donation for all places to the console
+        console.log("Total Donation for All Places:", donationRecords[0].totalDonationAllPlaces);
+
+        // Return the donation rate by address including total donation for all places
+        res.json({
+            totalDonationAllPlaces: donationRecords[0].totalDonationAllPlaces,
+            places: donationRecords[0].places
+        });
+    } catch (error) {
+        console.error('Error fetching donation rate by address:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
+
+
+
+
 // Define route for donation rate by address
 router.get('/chart', async (req, res) => {
     try {
@@ -737,16 +923,35 @@ router.get('/chart', async (req, res) => {
 });
 
 
+// Define route for campaign donation rates
+router.get('/campaign-donation-rates', async (req, res) => {
+    try {
+        // Fetch all campaigns
+        const campaigns = await Campaign.find();
+
+        // Calculate total donation for all campaigns
+        const totalAllCampaigns = campaigns.reduce((total, campaign) => total + campaign.currentAmount, 0);
+
+        // Calculate donation rate for each campaign
+        const donationRates = campaigns.map(campaign => ({
+            campaignId: campaign._id,
+            campaignName: campaign.campaignName,
+            donationRate: (campaign.currentAmount / totalAllCampaigns) * 100
+        }));
+
+        // Return the campaign donation rates
+        res.json(donationRates);
+    } catch (error) {
+        console.error('Error fetching campaign donation rates:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
 
 
 
 
-export default router;
-
-console.log("yyyyyyyyyyyyayyyy")
 
 
-/*
 // Function to add a campaign to user's favorites
 async function addFavoriteCampaign(userId: string, campaign: ICampaign) {
     try {
