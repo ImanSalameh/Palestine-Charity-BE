@@ -62,6 +62,6 @@ export const Donation = mongoose.model<IDonation>('Donation', donationSchema);
 
 //leaderboard top 10 donores for every campaign who paid more DONEEEEEEEE
 
-//api for every donor   chart  عدد المتبرعين والبلد ,ونسبة التبرع عشان ترجع لل
+//api for every donor   chart  عدد المتبرعين والبلد ,ونسبة التبرع عشان ترجع لل DONE
 
-//عدد المتبرعين وكم تبرع
+//عدد المتبرعين وكم تبرع DONE
