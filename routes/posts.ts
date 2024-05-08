@@ -771,6 +771,21 @@ router.get('/chart', async (req, res) => {
 });
 
 
+router.get('/campaigns/search/:name', async (req: Request, res: Response) => {
+    const { name } = req.params;
+
+    if (!name || typeof name !== 'string') {
+        return res.status(400).json({ error: 'Invalid search query' });
+    }
+
+    try {
+        const results = await Campaign.find({ campaignName: { $regex: new RegExp(name, 'i') } });
+        res.json(results);
+    } catch (error) {
+        console.error('Error searching campaigns:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
 
 
 export default router;
