@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import {Router, Request, Response, NextFunction} from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { IUser, User } from '../models/Users';
@@ -8,6 +8,8 @@ import { ICampaign, Campaign } from '../models/campaigns';
 import { Donation } from '../models/donation';
 import { IBadge, Badge } from '../models/badge';
 import { IDonor, Donor } from '../models/Users';
+import {cloudinary} from "../cloudinary";
+import multer from "multer";
 
 const router = Router();
 
@@ -787,6 +789,25 @@ router.get('/campaigns/search/:name', async (req: Request, res: Response) => {
     }
 });
 
+const storage = multer.diskStorage({});
+
+const upload = multer({ storage });
+
+router.post('/upload', upload.single('image'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: 'No file uploaded' });
+        }
+
+        // Upload image to Cloudinary
+        const result = await cloudinary.uploader.upload(req.file.path);
+
+        // If successful, return Cloudinary URL of the uploaded image
+        res.status(200).json({ imageUrl: result.secure_url });
+    } catch (error) {
+        next(error);
+    }
+});
 
 export default router;
 
