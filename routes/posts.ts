@@ -13,6 +13,10 @@ import multer from "multer";
 
 const router = Router();
 
+const storage = multer.diskStorage({});
+
+const upload = multer({ storage });
+
 router.post('/register', async (req: Request, res: Response) => {
     try {
         const { Name, Email, Password, Age, PhoneNumber, Address, Badges, Token, favorite, Role } = req.body;
@@ -117,19 +121,21 @@ router.post('/login', async (req: Request, res: Response) => {
 });
 
 
-
-
-
-
 // Campaign Add route
-router.post('/addcamp', async (req: Request, res: Response) => {
+router.post('/addcamp', upload.single('image'), async (req: Request, res: Response) => {
     try {
-        const { campaignName, campaignImage, organizationName, currentAmount, goalAmount, status, startDate, endDate, description, usre_id } = req.body;
+        const { campaignName, organizationName, currentAmount, goalAmount, status, startDate, endDate, description} = req.body;
 
-        // Create new campaign
+        // Check if image file exists
+        if (!req.file) {
+            return res.status(400).json({ message: 'No image uploaded' });
+        }
+
+        const result = await cloudinary.uploader.upload(req.file.path);
+
         const newCampaign: ICampaign = new Campaign({
             campaignName,
-            campaignImage,
+            campaignImage: result.secure_url,
             organizationName,
             currentAmount,
             goalAmount,
@@ -139,7 +145,6 @@ router.post('/addcamp', async (req: Request, res: Response) => {
             description
         });
 
-        // Save the campaign to the database
         const savedCampaign = await newCampaign.save();
 
         res.status(201).json({ message: 'Campaign added successfully' });
@@ -789,9 +794,6 @@ router.get('/campaigns/search/:name', async (req: Request, res: Response) => {
     }
 });
 
-const storage = multer.diskStorage({});
-
-const upload = multer({ storage });
 
 router.post('/upload', upload.single('image'), async (req: Request, res: Response, next: NextFunction) => {
     try {
