@@ -165,9 +165,6 @@ router.get('/', async (req: Request, res: Response) => {
 
 
 
-
-
-
 // Route to get donations for a specific user
 router.get('/user/:userId', async (req: Request, res: Response) => {
     try {
@@ -200,9 +197,14 @@ router.get('/user/:userId', async (req: Request, res: Response) => {
                 favorite: user.favorite,
                 PhoneNumber: user.PhoneNumber,
                 Role: user.Role,
-                Donationrecords: donations
-            },
-            //donations
+                Donationrecords: donations.map(donation => ({
+                    _id: donation._id,
+                    campaign: donation.campaign,
+                    amount: donation.amount,
+                    tokensEarned: donation.tokens, // Include tokens earned with each donation
+                    donationDate: donation.donationDate
+                }))
+            }
         };
 
         // Send the response
@@ -255,24 +257,21 @@ router.get('/campaigns', async (req, res) => {
 
 
 
-
 // route for fetching user tokens
 router.get('/tokens/:userId', async (req, res) => {
     try {
         const userId = req.params.userId;
 
-
         // Retrieve the user from the database
         const user = await User.findById(userId);
-
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        // Retrieve the user's donations from the database
-        const donations = await Donation.find({ user: userId });
+        // Retrieve the user's donations from the database, including anonymous donations
+        const donations = await Donation.find({ $or: [{ user: userId }, { user: 'Anonymous' }] });
 
-        // Calculate the total tokens that earned from donations
+        // Calculate the total tokens earned, including tokens from anonymous donations
         let totalTokens = 0;
         for (const donation of donations) {
             totalTokens += donation.tokens || 0;
@@ -285,20 +284,17 @@ router.get('/tokens/:userId', async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 });
-
-
-
-
 // Route to make a donation
 router.post('/donate', async (req: Request, res: Response) => {
     try {
-        const { userId, campaignId, amount } = req.body;
+        const { userId, campaignId, amount, anonymous } = req.body;
 
         // Create a new donation
         const newDonation = new Donation({
-            user: userId,
+            user: anonymous ? 'Anonymous' : userId,
             campaign: campaignId,
-            amount: amount
+            amount: amount,
+            tokens: anonymous ? amount * 10 : 0 // Calculate tokens earned for anonymous donations
         });
 
         // Save the donation
@@ -314,15 +310,25 @@ router.post('/donate', async (req: Request, res: Response) => {
         campaign.currentAmount += amount;
         await campaign.save();
 
-        // Calculate tokens earned based on donation amount
-        const tokensEarned = amount * 10;
-
         // Update the user's token balance
-        await User.findByIdAndUpdate(userId, { $inc: { token: tokensEarned } });
+        if (!anonymous) {
+            await User.findByIdAndUpdate(userId, { $inc: { token: amount * 10 } });
+        }
+
+        // Update the user's total tokens for anonymous donations
+        if (anonymous) {
+            const user = await User.findById(userId);
+            if (user) {
+                user.token += amount * 10;
+                await user.save();
+                // Check and award badges to the user for anonymous donations
+                await checkAndAwardBadges(userId, user.token); // Assuming token is the field storing user's tokens
+            }
+        }
 
         // Update the user's donation records
         const user: IUser | null = await User.findById(userId);
-        if (user) {
+        if (user && !anonymous) {
             user.Donationrecords.push(savedDonation._id);
             await user.save();
 
@@ -330,7 +336,8 @@ router.post('/donate', async (req: Request, res: Response) => {
             await checkAndAwardBadges(userId, user.token); // Assuming token is the field storing user's tokens
         }
 
-        res.status(201).json({ message: 'Donation made successfully', donation: savedDonation });
+        //res.status(201).json({ message: 'Donation made successfully', donation: savedDonation });
+        res.status(201).json({ message: 'Donation made successfully' });
     } catch (error) {
         console.error('Error making donation:', error);
         res.status(500).json({ message: 'Internal server error' });
@@ -579,10 +586,6 @@ router.delete('/remove-favorite/:userId/:campaignId', async (req: Request, res: 
 
 
 
-
-
-
-//  to handle donation and update the leaderboard for a campaign
 router.get('/campaign/:campaignId', async (req, res) => {
     try {
         const campaignId = req.params.campaignId;
@@ -594,7 +597,7 @@ router.get('/campaign/:campaignId', async (req, res) => {
         }
 
         // Retrieve donations for the campaign with specified fields from user
-        const donations = await Donation.find({ campaign: campaignId })
+        let donations = await Donation.find({ campaign: campaignId })
             .populate({
                 path: 'user',
                 select: 'Name Address Email Role' // Specify the fields I want to retrieve
@@ -605,6 +608,12 @@ router.get('/campaign/:campaignId', async (req, res) => {
         if (leaderboardResult.error) {
             return res.status(500).json({ message: 'Error fetching leaderboard: ' + leaderboardResult.error });
         }
+
+        // Add identifier for anonymous donations
+        donations = donations.map(donation => ({
+            ...donation.toObject(),
+            isAnonymous: donation.user === 'Anonymous' // Add a flag to identify anonymous donations
+        }));
 
         const responseData = {
             campaign: {
@@ -629,8 +638,6 @@ router.get('/campaign/:campaignId', async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 });
-
-
 
 
 
@@ -672,10 +679,13 @@ async function getCampaignLeaderboard(campaignId: string) {
             const userId = donationRecord._id;
             const amountDonated = donationRecord.totalDonation;
 
-            // Populate user names based on user IDs
-            const user = await User.findById(userId);
-            if (user) {
-                leaderboard.push({ userId, userName: user.Name, amountDonated });
+            // Skip anonymous donations
+            if (userId !== 'Anonymous') {
+                // Populate user names based on user IDs
+                const user = await User.findById(userId);
+                if (user) {
+                    leaderboard.push({ userId, userName: user.Name, amountDonated });
+                }
             }
         }
 
@@ -766,6 +776,37 @@ router.get('/chart', async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching donation rate by address:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+// Route to make a donation by non-registered user
+router.post('/donate-non-registered', async (req: Request, res: Response) => {
+    try {
+        const { campaignId, amount } = req.body;
+
+        // Create a new donation without user field for non-registered users
+        const newDonation = new Donation({
+            campaign: campaignId,
+            amount: amount
+        });
+
+        // Save the donation
+        const savedDonation = await newDonation.save();
+
+        // Fetch the campaign document
+        const campaign = await Campaign.findById(campaignId);
+        if (!campaign) {
+            return res.status(404).json({ message: 'Campaign not found' });
+        }
+
+        // Update the current amount of the campaign
+        campaign.currentAmount += amount;
+        await campaign.save();
+
+        res.status(201).json({ message: 'Donation made successfully by non-registered user', donation: savedDonation });
+    } catch (error) {
+        console.error('Error making donation by non-registered user:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 });

@@ -4,29 +4,35 @@ import { ICampaign } from './campaigns';
 
 // Define the interface for the Donation document
 export interface IDonation extends Document {
-    user: IUser['_id'];
-    campaign: ICampaign['_id'];
+    user?: import('mongoose').Types.ObjectId | 'Anonymous'; // Make user field optional
+    campaign: import('mongoose').Types.ObjectId;
     amount: number;
     donationDate: Date;
     tokens: number; // Tokens earned for the donation
-    paymentMethod?: string
+    paymentMethod?: string;
+    anonymous: boolean;
 }
 
 // Define the schema for the Donation document
 const donationSchema: Schema<IDonation> = new Schema<IDonation>({
-    user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    user: { type: Schema.Types.Mixed, required: false }, // Make user field optional
     campaign: { type: Schema.Types.ObjectId, ref: 'Campaign', required: true },
     amount: { type: Number, required: true },
     donationDate: { type: Date, default: Date.now },
     tokens: { type: Number, default: 0 }, // Default token value is 0
-    paymentMethod: { type: String }
+    paymentMethod: { type: String },
+    anonymous: { type: Boolean, default: false } // Add anonymous field with default value false
 });
 
 // to calculate and set the tokens earned before saving
 donationSchema.pre<IDonation>('save', function (next) {
-    // Calculate tokens earned based on donation amount
-    this.tokens = this.amount * 10;
+    // Check if user is provided
+    if (this.user) {
+        // Calculate tokens earned based on donation amount
+        this.tokens = this.amount * 10;
+    }
     next();
+
 });
 
 // Create and export the Donation model
@@ -65,3 +71,10 @@ export const Donation = mongoose.model<IDonation>('Donation', donationSchema);
 //api for every donor   chart  عدد المتبرعين والبلد ,ونسبة التبرع عشان ترجع لل DONE
 
 //عدد المتبرعين وكم تبرع DONE
+
+
+
+
+
+// annonymose
+// doantio api for not regestered user -> have no tokens and no badges 
