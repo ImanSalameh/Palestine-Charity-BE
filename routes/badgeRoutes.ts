@@ -1,29 +1,11 @@
-import mongoose, { Schema, Document } from 'mongoose';
+// badgeRoutes.ts
+
+import { Router, Request, Response } from 'express';
 import { IUser, User } from '../models/Users';
+import { IBadge, Badge } from '../models/badge';
 
 
-// Define the interface for the Badge document
-export interface IBadge extends Document {
-    badgePic: string; // URL or path to the badge picture
-    badgeName: string;
-    description: string; // Description of the badge
-    date: Date; // Date the badge was acquired
-    acquired: boolean; // Flag indicating if the badge has been acquired
-    user: IUser['_id']; // Reference to the user who owns the badge
-
-}
-
-// Define the schema for the Badge document
-const badgeSchema: Schema<IBadge> = new Schema({
-    badgePic: { type: String, required: true },
-    badgeName: { type: String, required: true },
-    description: { type: String, required: true },
-    date: { type: Date, required: true },
-    acquired: { type: Boolean, required: true },
-    user: { type: Schema.Types.ObjectId, ref: 'User', required: true }
-});
-
-
+const router = Router();
 
 
 // Define badge types and their corresponding token thresholds
@@ -98,5 +80,60 @@ function getBadgePictureURL(badgeName: string): string {
 
 
 
-// Create and export the Badge model
-export const Badge = mongoose.model<IBadge>('Badge', badgeSchema);
+// Route to trigger badge checks for all users
+router.post('/check-badges', async (req: Request, res: Response) => {
+    try {
+        // Fetch all users
+        const users = await User.find();
+
+        // Iterate through users and check and award badges
+        for (const user of users) {
+            await checkAndAwardBadges(user._id, user.token); // Assuming token is the field storing user's tokens
+        }
+
+        res.status(200).json({ message: 'Badge checks completed successfully' });
+    } catch (error) {
+        console.error('Error checking badges:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+// Route to trigger badge checks for a specific user
+router.post('/check-badges/:userId', async (req: Request, res: Response) => {
+    try {
+        const userId = req.params.userId;
+
+        // Fetch the user
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Check and award badges for the user
+        await checkAndAwardBadges(userId, user.token); // Assuming token is the field storing user's tokens
+
+        res.status(200).json({ message: 'Badge checks completed for user' });
+    } catch (error) {
+        console.error('Error checking badges for user:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
+// Route to fetch badges for a specific user
+router.get('/user-badges/:userId', async (req, res) => {
+    try {
+        const userId = req.params.userId;
+
+        // Fetch all badges for the user from the database
+        const userBadges = await Badge.find({ user: userId });
+
+        res.status(200).json({ userBadges });
+    } catch (error) {
+        console.error('Error fetching user badges:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+export default router;
