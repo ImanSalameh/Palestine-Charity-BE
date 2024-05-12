@@ -1,0 +1,256 @@
+/*
+
+// Define route for donation rate by address
+router.get('/chart', async (req, res) => {
+    try {
+        // Fetch all donation records for all users
+        const donationRecords = await User.aggregate([
+            {
+                $unwind: "$Donationrecords" // Expand Donationrecords array
+            },
+            {
+                $lookup: {
+                    from: "donations", // Collection name
+                    localField: "Donationrecords",
+                    foreignField: "_id",
+                    as: "donationDetails"
+                }
+            },
+            {
+                $unwind: "$donationDetails" // Expand donationDetails array
+            },
+            {
+                $group: {
+                    _id: { address: "$Address" }, // Group by address
+                    totalDonation: { $sum: "$donationDetails.amount" }
+                }
+            },
+            {
+                $group: {
+                    _id: null, // Group all documents together
+                    totalDonationAllPlaces: { $sum: "$totalDonation" }, // Calculate total donation in all places
+                    places: {
+                        $push: {
+                            address: "$_id.address",
+                            totalDonation: "$totalDonation"
+                        }
+                    }
+                }
+            },
+            {
+                $project: {
+                    _id: 0, // Exclude _id field from results
+                    totalDonationAllPlaces: 1, // Include total donation for all places
+                    places: {
+                        $map: {
+                            input: "$places",
+                            as: "place",
+                            in: {
+                                address: "$$place.address",
+                                totalDonation: "$$place.totalDonation",
+                                donationRate: {
+                                    $multiply: [
+                                        { $divide: ["$$place.totalDonation", "$totalDonationAllPlaces"] },
+                                        100 // Convert to percentage
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        ]);
+
+        if (donationRecords.length === 0) {
+            console.log("No donation records found.");
+            return res.status(404).json({ message: "No donation records found." });
+        }
+
+        // Log the total donation for all places to the console
+        console.log("Total Donation for All Places:", donationRecords[0].totalDonationAllPlaces);
+
+        // Return the donation rate by address including total donation for all places
+        res.json({
+            totalDonationAllPlaces: donationRecords[0].totalDonationAllPlaces,
+            places: donationRecords[0].places
+        });
+    } catch (error) {
+        console.error('Error fetching donation rate by address:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
+
+
+
+
+// Define route for donation rate by address
+router.get('/chart', async (req, res) => {
+    try {
+        // Fetch all donation records for all users
+        const donationRecords = await User.aggregate([
+            {
+                $unwind: "$Donationrecords" // Expand Donationrecords array
+            },
+            {
+                $lookup: {
+                    from: "donations", // Collection name
+                    localField: "Donationrecords",
+                    foreignField: "_id",
+                    as: "donationDetails"
+                }
+            },
+            {
+                $unwind: "$donationDetails" // Expand donationDetails array
+            },
+            {
+                $group: {
+                    _id: { address: "$Address", user: "$_id" }, // Group by address and user
+                    totalDonation: { $sum: "$donationDetails.amount" }
+                }
+            },
+            {
+                $group: {
+                    _id: "$_id.address", // Group by address only
+                    totalDonation: { $sum: "$totalDonation" },
+                    numUsers: { $sum: 1 } // Count the number of users in each address
+                }
+            },
+            {
+                $project: {
+                    _id: 0, // Exclude _id field from results
+                    address: "$_id",
+                    totalDonation: 1,
+                    donationRate: { $divide: ["$totalDonation", "$numUsers"] } // Calculate donation rate per user in the same address
+                }
+            }
+        ]);
+
+        // Return the donation rate by address
+        res.json(donationRecords);
+    } catch (error) {
+        console.error('Error fetching donation rate by address:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
+// Define route for campaign donation rates
+router.get('/campaign-donation-rates', async (req, res) => {
+    try {
+        // Fetch all campaigns
+        const campaigns = await Campaign.find();
+
+        // Calculate total donation for all campaigns
+        const totalAllCampaigns = campaigns.reduce((total, campaign) => total + campaign.currentAmount, 0);
+
+        // Calculate donation rate for each campaign
+        const donationRates = campaigns.map(campaign => ({
+            campaignId: campaign._id,
+            campaignName: campaign.campaignName,
+            donationRate: (campaign.currentAmount / totalAllCampaigns) * 100
+        }));
+
+        // Return the campaign donation rates
+        res.json(donationRates);
+    } catch (error) {
+        console.error('Error fetching campaign donation rates:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
+
+
+
+
+// Function to add a campaign to user's favorites
+async function addFavoriteCampaign(userId: string, campaign: ICampaign) {
+    try {
+        const user = await User.findById(userId);
+
+        if (!user) {
+            console.error('User not found');
+            return;
+        }
+
+        // Ensure user.favorite is recognized as an array of ICampaign objects
+        if ((user as IUser).favorite instanceof Array) {
+            (user as IUser).favorite.push(campaign);
+            await user.save();
+
+            console.log(`Campaign added to favorites for user ${userId}`);
+        } else {
+            console.error('User favorite is not an array');
+        }
+    } catch (error) {
+        console.error('Error adding campaign to favorites:', error);
+    }
+}
+
+// Function to remove a campaign from user's favorites
+async function removeFavoriteCampaign(userId: string, campaignId: string) {
+    try {
+        const user = await User.findById(userId);
+
+        if (!user) {
+            console.error('User not found');
+            return;
+        }
+
+        // Ensure user.favorite is recognized as an array of ICampaign objects
+        if ((user as IUser).favorite instanceof Array) {
+            (user as IUser).favorite = (user as IUser).favorite.filter((campaign: ICampaign) => campaign._id !== campaignId);
+            await user.save();
+
+            console.log(`Campaign removed from favorites for user ${userId}`);
+        } else {
+            console.error('User favorite is not an array');
+        }
+    } catch (error) {
+        console.error('Error removing campaign from favorites:', error);
+    }
+}
+
+
+
+router.post('/creatBadge', async (req: Request, res: Response) => {
+    try {
+
+        const { userId, picture, description } = req.body;
+
+        // Create a new badge document
+        const newBadge = new Badge({
+            user: userId,
+            picture,
+            description
+        });
+
+        // Save the badge to the database
+        const savedBadge = await newBadge.save();
+
+        res.status(201).json({ message: 'Badge awarded successfully', badge: savedBadge });
+    } catch (error) {
+        console.error('Error awarding badge:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
+
+// Campaign get route
+router.get('/', async (req: Request, res: Response) => {
+    try {
+        // Query all campaigns from the database
+        const campaigns = await Campaign.find();
+
+        res.status(200).json({ campaigns });
+    } catch (error) {
+        console.error('Error retrieving campaigns:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+*/
+
