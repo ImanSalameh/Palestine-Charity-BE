@@ -1,10 +1,16 @@
 import express, { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import { User } from './models/Users';
-import { Campaign } from './models/campaigns';
+
+
+// Import separate route files
 import postsRoutes from './routes/posts';
-import campaignRoutes from './routes/posts'; // Correct import
-import { Badge } from './models/badge';
+import campaignRoutes from './routes/campaignRoutes';
+import authRoutes from './routes/authRoutes';
+import badgeRoutes from './routes/badgeRoutes';
+import donationRoutes from './routes/donationRoutes';
+import userRouts from './routes/userRoutes';
+
 import cors from 'cors';
 
 const app = express();
@@ -17,10 +23,6 @@ app.use('/posts', postsRoutes);
 
 // MongoDB connection URI 
 const mongoURI = 'mongodb+srv://imansalameh:iman2002@cluster1.xttal40.mongodb.net/?retryWrites=true&w=majority&appName=Cluster1';
-
-const corsOptions = {
-  origin: 'http://localhost:4200',
-};
 
 // Connect to MongoDB
 mongoose.connect(mongoURI)
@@ -49,7 +51,12 @@ mongoose.connect(mongoURI)
     });
 
     // Use campaign routes
-    app.use('/campaigns', campaignRoutes);
+    app.use('/posts', campaignRoutes);
+    app.use('/posts', authRoutes);
+    app.use('/posts', badgeRoutes);
+    app.use('/posts', donationRoutes);
+    app.use('/posts', userRouts);
+
 
     // Start the Express server
     app.listen(port, () => {
