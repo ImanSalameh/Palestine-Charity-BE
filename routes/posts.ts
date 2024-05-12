@@ -13,6 +13,7 @@ import multer from "multer";
 
 const router = Router();
 
+
 const storage = multer.diskStorage({});
 
 const upload = multer({ storage });
@@ -804,6 +805,7 @@ router.post('/upload', upload.single('image'), async (req: Request, res: Respons
 
         // Upload image to Cloudinary
         const result = await cloudinary.uploader.upload(req.file.path);
+
 
         // If successful, return Cloudinary URL of the uploaded image
         res.status(200).json({ imageUrl: result.secure_url });
