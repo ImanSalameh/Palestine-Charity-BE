@@ -16,5 +16,34 @@ Content-Type: application/json
   "Password": "1234"
 }
 
-### Request 2: get campaigns###
+### Request 3: get campaign###
 GET http://localhost:3000/posts/campaign/662cf869bc1e80d9f47ef3ab
+
+### Request 4: get Tokens###
+GET http://localhost:3000/posts/tokens/663058f99bf535d02de18195
+
+#### Request 5: get badges###
+GET http://localhost:3000/posts/check-badges/663058279bf535d02de18191
+
+### Request 6: donate###
+POST http://localhost:3000/posts/donate
+Content-Type: application/json
+
+{
+    "campaignId": "66352eb746739da861d05f4a",
+    "userId": "661ff9daccfb0638729e9e3b",
+    "amount": 50
+}
+
+### Request 7: get leaderboard###
+GET http://localhost:3000/posts/662cf869bc1e80d9f47ef3ab/leaderboard
+
+### Request 8: get favourites###
+GET http://localhost:3000/posts/favorite-campaigns/66152cee26626ef918fb2094
+
+
+### Request 9: get chart data###
+GET http://localhost:3000/posts/chart
+
+### Request 10: search###
+GET http://localhost:3000/posts/campaigns/search/can
