@@ -76,5 +76,23 @@ export const Donation = mongoose.model<IDonation>('Donation', donationSchema);
 
 
 
-// annonymose
-// doantio api for not regestered user -> have no tokens and no badges 
+// annonymose -> DONE
+// doantio api for not regestered user -> have no tokens and no badges -> DONE
+
+
+/*
+
+shop
+{customizables: profilePics[img,file], fonts[ex{bright, sunlight}], border[text], bg[file]}
+payment with tokens
+
+addFont(userId, fontId){
+    add font to user ccustomizables
+    scc|failed
+}
+UpdatTokins
+
+getFonts
+
+uertokens->if tokens > FontPrice ->addFont-> upsdatetokins
+*/
