@@ -775,7 +775,7 @@ router.get('/chart', async (req, res) => {
 
 export default router;
 
-console.log("yyyyyyyyyyyyayyyy")
+console.log("have a nice day!")
 
 
 
