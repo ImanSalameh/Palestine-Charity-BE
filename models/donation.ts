@@ -82,7 +82,7 @@ export const Donation = mongoose.model<IDonation>('Donation', donationSchema);
 
 /*
 
-shop
+shop  -> DONE
 {customizables: profilePics[img,file], fonts[ex{bright, sunlight}], border[text], bg[file]}
 payment with tokens
 
