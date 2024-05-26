@@ -22,7 +22,7 @@ export interface IUser extends Document {
 // Define schema for User
 const userSchema: Schema<IUser> = new Schema<IUser>({
     Name: { type: String },
-    token: { type: Number },
+    token: { type: Number, default: 0 }, // Set default value for tokens field
     Address: { type: String },
     Badges: { type: [Schema.Types.ObjectId], ref: 'Badge', default: [] }, // Use ref to 'Badge' and set default value to empty array
     Age: { type: Date },
@@ -33,6 +33,7 @@ const userSchema: Schema<IUser> = new Schema<IUser>({
     Password: { type: String },
     Role: { type: String }
 }, { discriminatorKey: 'type' });
+
 
 // Donor interface
 export interface IDonor extends IUser {
@@ -55,7 +56,7 @@ const donorSchema: Schema<IDonor> = new Schema<IDonor>({
 
 
 
-// Organization interface
+// Organizat
 export interface IOrganization extends IUser {
     OrganizationID: number;
     Type: string;
@@ -64,6 +65,7 @@ export interface IOrganization extends IUser {
     CEO: string;
     Industry: string;
 }
+
 
 // Organization schema (inherits from User)
 const organizationSchema: Schema<IOrganization> = new Schema<IOrganization>({
