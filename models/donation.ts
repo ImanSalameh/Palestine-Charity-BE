@@ -96,3 +96,7 @@ getFonts
 
 uertokens->if tokens > FontPrice ->addFont-> upsdatetokins
 */
+
+// get items ->Done
+// not allowed to buy the same items again -> DONE
+// api for each user that have each items -> DONE
