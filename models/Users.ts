@@ -17,6 +17,8 @@ export interface IUser extends Document {
     Email: string;
     Password: string;
     Role: string;
+    purchasedItems: string[]; // Add purchased items field
+
 }
 
 // Define schema for User
@@ -31,7 +33,8 @@ const userSchema: Schema<IUser> = new Schema<IUser>({
     PhoneNumber: { type: String },
     Email: { type: String },
     Password: { type: String },
-    Role: { type: String }
+    Role: { type: String },
+    purchasedItems: { type: [String], default: [] } // Initialize purchased items array
 }, { discriminatorKey: 'type' });
 
 

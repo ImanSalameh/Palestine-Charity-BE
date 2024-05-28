@@ -10,6 +10,7 @@ import authRoutes from './routes/authRoutes';
 import badgeRoutes from './routes/badgeRoutes';
 import donationRoutes from './routes/donationRoutes';
 import userRouts from './routes/userRoutes';
+import shopRouts from './routes/shopRoutes';
 
 import cors from 'cors';
 
@@ -56,6 +57,7 @@ mongoose.connect(mongoURI)
     app.use('/posts', badgeRoutes);
     app.use('/posts', donationRoutes);
     app.use('/posts', userRouts);
+    app.use('/posts', shopRouts);
 
 
     // Start the Express server
