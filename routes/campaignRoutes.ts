@@ -1,23 +1,51 @@
 // campaignRoutes.ts
 
-import { Router, Request, Response } from 'express';
+import {Router, Request, Response, NextFunction} from 'express';
 import { IUser, User } from '../models/Users';
 import mongoose from 'mongoose';
 import { ICampaign, Campaign } from '../models/campaigns';
 import { Donation } from '../models/donation';
+import multer from "multer";
+import {cloudinary} from "../cloudinary";
 
 const router = Router();
 
+const storage = multer.diskStorage({});
+
+const upload = multer({ storage });
+
+
+router.post('/upload', upload.single('image'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: 'No file uploaded' });
+        }
+
+        // Upload image to Cloudinary
+        const result = await cloudinary.uploader.upload(req.file.path);
+
+        // If successful, return Cloudinary URL of the uploaded image
+        res.status(200).json({ imageUrl: result.secure_url });
+    } catch (error) {
+        next(error);
+    }
+});
 
 // Campaign Add route
-router.post('/addcamp', async (req: Request, res: Response) => {
+router.post('/addcamp', upload.single('image'), async (req: Request, res: Response) => {
     try {
-        const { campaignName, campaignImage, organizationName, currentAmount, goalAmount, status, startDate, endDate, description, usre_id } = req.body;
+        const { campaignName, organizationName, currentAmount, goalAmount, status, startDate, endDate, description} = req.body;
 
-        // Create new campaign
+        // Check if image file exists
+        if (!req.file) {
+            return res.status(400).json({ message: 'No image uploaded' });
+        }
+
+        const result = await cloudinary.uploader.upload(req.file.path);
+
         const newCampaign: ICampaign = new Campaign({
             campaignName,
-            campaignImage,
+            campaignImage: result.secure_url,
             organizationName,
             currentAmount,
             goalAmount,
@@ -27,7 +55,6 @@ router.post('/addcamp', async (req: Request, res: Response) => {
             description
         });
 
-        // Save the campaign to the database
         const savedCampaign = await newCampaign.save();
 
         res.status(201).json({ message: 'Campaign added successfully' });
@@ -148,7 +175,7 @@ async function getCampaignLeaderboard(campaignId: string) {
 
             // Skip anonymous donations
             if (userId !== 'Anonymous') {
-                // Populate user names based on user IDs
+                // Populate usernames based on user IDs
                 const user = await User.findById(userId);
                 if (user) {
                     leaderboard.push({ userId, userName: user.Name, amountDonated });
@@ -264,6 +291,22 @@ router.delete('/remove-favorite/:userId/:campaignId', async (req: Request, res: 
     } catch (error) {
         console.error('Error removing campaign from favorites:', error);
         return res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+router.get('/campaigns/search/:name', async (req: Request, res: Response) => {
+    const { name } = req.params;
+
+    if (!name || typeof name !== 'string') {
+        return res.status(400).json({ error: 'Invalid search query' });
+    }
+
+    try {
+        const results = await Campaign.find({ campaignName: { $regex: new RegExp(name, 'i') } });
+        res.json(results);
+    } catch (error) {
+        console.error('Error searching campaigns:', error);
+        res.status(500).json({ error: 'Internal server error' });
     }
 });
 
