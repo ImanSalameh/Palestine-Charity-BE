@@ -47,3 +47,6 @@ GET http://localhost:3000/posts/chart
 
 ### Request 10: search###
 GET http://localhost:3000/posts/campaigns/search/can
+
+### Request 11: get user###
+GET http://localhost:3000/posts/user/6636d9f62913d7251fb31877

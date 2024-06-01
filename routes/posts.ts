@@ -128,49 +128,6 @@ router.get('/chart', async (req, res) => {
 
 
 
-// Define API endpoint for purchasing items
-router.post('/buyItem', async (req, res) => {
-    try {
-        const userId = req.body.userId;
-        const itemId = req.body.itemId;
-        const selectedOption = req.body.selectedOption; // Chosen option from the array
-
-        // Retrieve user from database
-        const user = await User.findById(userId);
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-
-        // Retrieve item from shop items
-        const item = shopItems.find(item => item.id === itemId);
-        if (!item) {
-            return res.status(404).json({ message: 'Item not found' });
-        }
-
-        // Check if selected option is valid for the item
-        if (!item.options.includes(selectedOption)) {
-            return res.status(400).json({ message: 'Invalid option selected' });
-        }
-
-        // Check if user has enough tokens to purchase the item
-        if (user.token < item.price) {
-            return res.status(400).json({ message: 'Not enough tokens to purchase this item' });
-        }
-
-        // Deduct tokens from user's balance
-        user.token -= item.price;
-
-
-        // Save updated user to database
-        await user.save();
-
-        res.status(200).json({ message: 'Item purchased successfully', user });
-    } catch (error) {
-        console.error('Error purchasing item:', error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
-});
-
 export default router;
 
 console.log("have a nice day!")

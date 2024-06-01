@@ -2,10 +2,14 @@
 import { Router, Request, Response } from 'express';
 import { IUser, User } from '../models/Users';
 import { Donation } from '../models/donation';
+import {cloudinary} from "../cloudinary";
+import multer from "multer";
 
 const router = Router();
 
+const storage = multer.diskStorage({});
 
+const upload = multer({ storage });
 
 // Route to get donations for a specific user
 router.get('/user/:userId', async (req: Request, res: Response) => {
@@ -31,6 +35,8 @@ router.get('/user/:userId', async (req: Request, res: Response) => {
             user: {
                 _id: user._id,
                 Name: user.Name,
+                profilePicture: user.profilePicture,
+                backgroundPicture: user.backgroundPicture,
                 Address: user.Address,
                 Age: user.Age,
                 Email: user.Email,
@@ -85,6 +91,68 @@ router.get('/tokens/:userId', async (req, res) => {
     } catch (error) {
         console.error('Error retrieving user tokens:', error);
         res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+router.put('/updateProfilePicture', upload.single('profilePicture'), async (req, res: Response) => {
+    try {
+        const userId = req.body.userId as string; // Or however you get the user ID
+        let profilePictureUrl: string | undefined;
+
+        if (req.file) {
+            // File upload logic
+            const result = await cloudinary.uploader.upload(req.file.path);
+            profilePictureUrl = result.secure_url;
+        } else if (req.body.profilePictureUrl) {
+            // URL string logic
+            profilePictureUrl = req.body.profilePictureUrl;
+        } else {
+            return res.status(400).json({ error: 'Bad request: No file or URL provided' });
+        }
+
+        // Update user profile picture
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        user.profilePicture = profilePictureUrl!;
+        await user.save();
+
+        res.json({ message: 'Profile picture updated successfully', profilePicture: profilePictureUrl });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+router.put('/updateBackgroundPicture', upload.single('backgroundPicture'), async (req, res: Response) => {
+    try {
+        const userId = req.body.userId as string; // Or however you get the user ID
+        let backgroundPictureUrl: string | undefined;
+
+        if (req.file) {
+            // File upload logic
+            const result = await cloudinary.uploader.upload(req.file.path);
+            backgroundPictureUrl = result.secure_url;
+        } else if (req.body.backgroundPictureUrl) {
+            // URL string logic
+            backgroundPictureUrl = req.body.backgroundPictureUrl;
+        } else {
+            return res.status(400).json({ error: 'Bad request: No file or URL provided' });
+        }
+
+        // Update user background picture
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        user.backgroundPicture = backgroundPictureUrl!;
+        await user.save();
+
+        res.json({ message: 'Background picture updated successfully', backgroundPicture: backgroundPictureUrl });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal server error' });
     }
 });
 
