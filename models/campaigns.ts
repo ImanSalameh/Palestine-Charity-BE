@@ -17,6 +17,7 @@ export interface ICampaign extends Document {
     endDate: Date;
     leaderboard: IDonor[]; //  اسم الدونر والمبلغ الاجمالي الي تبرع في بهاي الكامبين
     description: string;
+    
 }
 
 // Define schema for Campaign
