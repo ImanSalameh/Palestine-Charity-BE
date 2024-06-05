@@ -28,8 +28,8 @@ const badgeSchema: Schema<IBadge> = new Schema({
 
 // Define badge types and their corresponding token thresholds
 const badgeTypes = [
-    { name: "Silver Contributor", threshold: 100 },
-    { name: "Bronze Contributor", threshold: 5000 }
+    { name: "Silver Contributor", threshold: 100, description: 'The user donated 10$ in total!' },
+    { name: "Bronze Contributor", threshold: 5000, description: 'The user donated 500$ in total!' }
 
 ];
 
