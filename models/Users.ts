@@ -8,6 +8,7 @@ import { IBadge, Badge } from '../models/badge';
 export interface IUser extends Document {
     Name: string;
     profilePicture: string;
+    biography: string;
     backgroundPicture: string;
     token: number;
     Address: string;
@@ -27,8 +28,9 @@ export interface IUser extends Document {
 const userSchema: Schema<IUser> = new Schema<IUser>({
     Name: { type: String },
     profilePicture: {type: String, default:'hello'},
+    biography: {type: String, default: 'PalHope user'},
     backgroundPicture: {type: String},
-    token: { type: Number, default: 0 }, // Set default value for tokens field
+    token: { type: Number, default: 0 },
     Address: { type: String },
     Badges: { type: [Schema.Types.ObjectId], ref: 'Badge', default: [] }, // Use ref to 'Badge' and set default value to empty array
     Age: { type: Date },
@@ -37,7 +39,7 @@ const userSchema: Schema<IUser> = new Schema<IUser>({
     PhoneNumber: { type: String },
     Email: { type: String },
     Password: { type: String },
-    Role: { type: String },
+    Role: { type: String, default: 'Donor' },
     purchasedItems: { type: [String], default: [] } // Initialize purchased items array
 }, { discriminatorKey: 'type' });
 
