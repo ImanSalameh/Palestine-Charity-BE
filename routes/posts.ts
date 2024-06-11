@@ -160,6 +160,9 @@ router.get('/chart/:campaignId', async (req, res) => {
                     address: "$_id.address", // Project the address field
                     totalDonation: 1 // Include total donation for each address
                 }
+            },
+            {
+                $sort: { totalDonation: -1 } // Sort in descending order based on totalDonation
             }
         ]);
 
@@ -168,12 +171,20 @@ router.get('/chart/:campaignId', async (req, res) => {
             return res.status(404).json({ message: "No donation records found for the campaign." });
         }
 
-        // Return the donation records with addresses and total donation for the campaign
+        // Calculate total donation for the campaign
+        const totalDonationAllPlaces = donationRecords.reduce((total, record) => total + record.totalDonation, 0);
+
+        // Calculate donation rate for each address
+        const places = donationRecords.map(record => ({
+            address: record.address,
+            totalDonation: record.totalDonation,
+            donationRate: (record.totalDonation / totalDonationAllPlaces) * 100 // Calculate donation rate
+        }));
+
+        // Return the donation records with addresses, total donation, and donation rate for the campaign
         res.json({
-            places: donationRecords.map(record => ({
-                address: record.address,
-                totalDonation: record.totalDonation
-            }))
+            totalDonationAllPlaces: totalDonationAllPlaces,
+            places: places
         });
     } catch (error) {
         console.error('Error fetching donation records for the campaign:', error);
