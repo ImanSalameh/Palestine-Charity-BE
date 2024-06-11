@@ -15,7 +15,7 @@ export interface ICampaign extends Document {
     currentAmount: number;
     startDate: Date;
     endDate: Date;
-    leaderboard: IDonor[]; //  اسم الدونر والمبلغ الاجمالي الي تبرع في بهاي الكامبين
+    leaderboard: IDonor[];
     description: string;
 }
 
