@@ -157,4 +157,25 @@ router.put('/updateBackgroundPicture', upload.single('backgroundPicture'), async
     }
 });
 
+router.put('/user/:id/biography', async (req: Request, res: Response) => {
+    const userId = req.params.id;
+    const { biography } = req.body;
+
+    try {
+        const user = await User.findByIdAndUpdate(
+            userId,
+            { biography },
+            { new: true }
+        );
+
+        if (!user) {
+            return res.status(404).send({ message: 'User not found' });
+        }
+
+        res.send(user);
+    } catch (error) {
+        res.status(500).send({ message: (error as Error).message });
+    }
+});
+
 export default router;
