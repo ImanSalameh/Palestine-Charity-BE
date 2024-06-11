@@ -157,7 +157,7 @@ router.put('/updateBackgroundPicture', upload.single('backgroundPicture'), async
     }
 });
 
-router.put('/user/:id/biography', async (req: Request, res: Response) => {
+router.put('/:id/biography', async (req: Request, res: Response) => {
     const userId = req.params.id;
     const { biography } = req.body;
 
