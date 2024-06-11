@@ -17,6 +17,7 @@ export interface ICampaign extends Document {
     endDate: Date;
     leaderboard: IDonor[];
     description: string;
+    newsDashboard: string[];
 }
 
 // Define schema for Campaign
@@ -30,7 +31,8 @@ const campaignSchema: Schema<ICampaign> = new Schema<ICampaign>({
     startDate: { type: Date, required: true },
     endDate: { type: Date, required: true },
     leaderboard: { type: [{ userId: String, amountDonated: Number }], default: [] },
-    description: { type: String }
+    description: { type: String },
+    newsDashboard: { type: [String], default: [] }
 });
 
 

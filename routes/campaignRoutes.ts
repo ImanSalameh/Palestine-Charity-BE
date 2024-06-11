@@ -121,6 +121,7 @@ router.get('/campaign/:campaignId', async (req, res) => {
                 startDate: campaign.startDate,
                 endDate: campaign.endDate,
                 description: campaign.description,
+                newsDashboard: campaign.newsDashboard,
                 leaderboard: leaderboardResult.leaderboard
             },
             donations
@@ -310,6 +311,60 @@ router.get('/campaigns/search/:name', async (req: Request, res: Response) => {
     }
 });
 
+router.post('/campaigns/:campaignId/news', async (req: Request, res: Response) => {
+    try {
+        const campaignId = req.params.campaignId;
+        const news = req.body.news; // Assuming the request body contains a 'news' field
+
+        if (!news) {
+            return res.status(400).json({ message: 'News content is required' });
+        }
+
+        const updatedCampaign = await Campaign.findByIdAndUpdate(
+            campaignId,
+            { $push: { newsDashboard: news } },
+            { new: true } // Return the updated document
+        );
+
+        if (!updatedCampaign) {
+            return res.status(404).json({ message: 'Campaign not found' });
+        }
+
+        res.status(201).json(updatedCampaign.newsDashboard);
+    } catch (error) {
+        console.error('Error adding news to campaign:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+router.delete('/campaigns/:campaignId/news/:index', async (req: Request, res: Response) => {
+    try {
+        const campaignId = req.params.campaignId;
+        const index = parseInt(req.params.index); // Convert index to a number
+
+        // Find the campaign
+        const campaign = await Campaign.findById(campaignId);
+        if (!campaign) {
+            return res.status(404).json({ message: 'Campaign not found' });
+        }
+
+        // Check if the index is valid
+        if (index < 0 || index >= campaign.newsDashboard.length) {
+            return res.status(400).json({ message: 'Invalid index' });
+        }
+
+        // Remove the news item at the specified index
+        campaign.newsDashboard.splice(index, 1);
+
+        // Save the updated campaign
+        await campaign.save();
+
+        res.json(campaign.newsDashboard);
+    } catch (error) {
+        console.error('Error deleting news from campaign:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});;
 
 
 export default router;
