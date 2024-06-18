@@ -36,6 +36,7 @@ router.get('/user/:userId', async (req: Request, res: Response) => {
                 _id: user._id,
                 Name: user.Name,
                 profilePicture: user.profilePicture,
+                biography: user.biography,
                 backgroundPicture: user.backgroundPicture,
                 Address: user.Address,
                 Age: user.Age,
