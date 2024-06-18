@@ -2,14 +2,14 @@
 
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
-import { IUser, User } from '../models/Users';
+import {Admin, IUser, User} from '../models/Users';
 import { sign } from 'jsonwebtoken';
 import { Donation } from '../models/donation';
 
 
 const router = Router();
 
-router.post('/register', async (req: Request, res: Response) => {
+router.post('/register', async (req, res) => {
     try {
         const { Name, Email, Password, Age, PhoneNumber, Address, Badges, Token, favorite, Role } = req.body;
 
@@ -19,7 +19,7 @@ router.post('/register', async (req: Request, res: Response) => {
         }
 
         // Check if user with the same email already exists
-        const existingUser: IUser | null = await User.findOne({ Email });
+        const existingUser = await User.findOne({ Email });
 
         if (existingUser) {
             return res.status(400).json({ message: 'User already exists with this Email' });
@@ -28,8 +28,14 @@ router.post('/register', async (req: Request, res: Response) => {
         // Hash the password
         const hashedPassword = await bcrypt.hash(Password, 10);
 
+        // Determine if the user should be activated based on their role
+        let activated = true;
+        if (Role === 'Organization' || Role === 'Influencer') {
+            activated = false;
+        }
 
-        const newUser: IUser = new User({
+        // Create the new user
+        const newUser = new User({
             Name,
             Email,
             Password: hashedPassword,
@@ -40,26 +46,32 @@ router.post('/register', async (req: Request, res: Response) => {
             Token,
             favorite,
             Role,
-            Donationrecords: [] // Initialize as an empty array
+            Donationrecords: [], // Initialize as an empty array
+            activated
         });
 
         // Save the user to the database
         const savedUser = await newUser.save();
 
-        // Generate a token for the user
-        const token = sign({ userId: savedUser._id }, 'your_secret_key', { expiresIn: '1h' });
+        // If the new user is an Organization or Influencer, add to admin's usersRequests
+        if (Role === 'Organization' || Role === 'Influencer') {
+            const admin = await Admin.findOne(); // Assuming there's only one admin. Adjust as necessary.
+            if (admin) {
+                admin.usersRequests.push(savedUser._id.toString());
+                await admin.save();
+            }
+        }
 
         // Include the auto-generated _id and token in the response
         res.status(201).json({
             message: 'User registered successfully',
-
+            userId: savedUser._id,
         });
     } catch (error) {
         console.error('Error registering user:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 });
-
 
 
 

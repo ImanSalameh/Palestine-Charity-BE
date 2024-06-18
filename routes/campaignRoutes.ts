@@ -1,7 +1,7 @@
 // campaignRoutes.ts
 
 import {Router, Request, Response, NextFunction} from 'express';
-import { IUser, User } from '../models/Users';
+import {IUser, Organization, User} from '../models/Users';
 import mongoose from 'mongoose';
 import { ICampaign, Campaign } from '../models/campaigns';
 import { Donation } from '../models/donation';
@@ -32,21 +32,36 @@ router.post('/upload', upload.single('image'), async (req: Request, res: Respons
 });
 
 // Campaign Add route
+
 router.post('/addcamp', upload.single('image'), async (req: Request, res: Response) => {
     try {
-        const { campaignName, organizationName, currentAmount, goalAmount, status, startDate, endDate, description} = req.body;
+        const { campaignName, userId, currentAmount, goalAmount, status, startDate, endDate, description } = req.body;
 
         // Check if image file exists
         if (!req.file) {
             return res.status(400).json({ message: 'No image uploaded' });
         }
 
+        // Upload image to Cloudinary
         const result = await cloudinary.uploader.upload(req.file.path);
 
+        // Trim and cast the userId to ObjectId
+        const trimmedUserId = userId.trim();
+        const objectId = new mongoose.Types.ObjectId(trimmedUserId);
+
+        // Find the organization by userId
+        const organization = await Organization.findOne({ _id: objectId, Role: 'Organization' });
+        console.log('Trimmed UserID:', trimmedUserId);
+        console.log('ObjectID:', objectId);
+        if (!organization) {
+            return res.status(404).json({ message: 'Organization not found' });
+        }
+
+        // Create the new campaign
         const newCampaign: ICampaign = new Campaign({
             campaignName,
             campaignImage: result.secure_url,
-            organizationName,
+            organizationName: organization.Name,
             currentAmount,
             goalAmount,
             status,
@@ -55,7 +70,16 @@ router.post('/addcamp', upload.single('image'), async (req: Request, res: Respon
             description
         });
 
+        // Save the new campaign
         const savedCampaign = await newCampaign.save();
+
+        // Add the campaign to the organization's campaigns array
+        organization.campaigns.push(savedCampaign._id);
+
+        // Save the organization
+        await organization.save();
+
+
 
         res.status(201).json({ message: 'Campaign added successfully' });
     } catch (error) {

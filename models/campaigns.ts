@@ -39,7 +39,6 @@ const campaignSchema: Schema<ICampaign> = new Schema<ICampaign>({
 
 
 
-
 export const Campaign = mongoose.model<ICampaign>('Campaign', campaignSchema);
 
 
@@ -53,3 +52,4 @@ export const Campaign = mongoose.model<ICampaign>('Campaign', campaignSchema);
 
     //badge -> pic and description, date , aquired (boolean) , user
     //api for every donor   chart  عدد المتبرعين والبلد ,ونسبة التبرع عشان ترجع لل
+
