@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import bcrypt from 'bcrypt';
-import { ICampaign } from './campaigns';
+import {Campaign, ICampaign} from './campaigns';
 import { IBadge, Badge } from '../models/badge';
 
 
@@ -19,9 +19,9 @@ export interface IUser extends Document {
     PhoneNumber: string;
     Email: string;
     Password: string;
-    Role: string;
+    activated: boolean;
+    Role: 'Influencer' | 'Organization' | 'Admin' | 'Donor';
     purchasedItems: string[]; // Add purchased items field
-
 }
 
 // Define schema for User
@@ -39,8 +39,13 @@ const userSchema: Schema<IUser> = new Schema<IUser>({
     PhoneNumber: { type: String },
     Email: { type: String },
     Password: { type: String },
-    Role: { type: String, default: 'Donor' },
-    purchasedItems: { type: [String], default: [] } // Initialize purchased items array
+    activated:{ type: Boolean },
+    Role:{
+        type: String,
+        enum: ['Influencer', 'Organization', 'Admin', 'Donor'],
+        default: 'Donor'
+},
+    purchasedItems: { type: [String], default: [] }
 }, { discriminatorKey: 'type' });
 
 
@@ -67,22 +72,24 @@ const donorSchema: Schema<IDonor> = new Schema<IDonor>({
 
 // Organizat
 export interface IOrganization extends IUser {
-    OrganizationID: number;
+    OrganizationID: string;
     Type: string;
     Description: string;
     Revenue: mongoose.Types.Decimal128;
     CEO: string;
+    campaigns: ICampaign[];
     Industry: string;
 }
 
 
 // Organization schema (inherits from User)
 const organizationSchema: Schema<IOrganization> = new Schema<IOrganization>({
-    OrganizationID: { type: Number, required: true },
+    OrganizationID: { type: String, required: true },
     Type: { type: String, required: true },
     Description: { type: String, required: true },
     Revenue: { type: mongoose.Types.Decimal128, required: true },
     CEO: { type: String, required: true },
+    campaigns: [{ type: Schema.Types.ObjectId, ref: 'Campaign' }],
     Industry: { type: String, required: true }
 });
 
@@ -90,14 +97,14 @@ const organizationSchema: Schema<IOrganization> = new Schema<IOrganization>({
 export interface IAdmin extends IUser {
     AdminID: number;
     Gender: string;
-    Role: string;
+    usersRequests: string[];
 }
 
 // Admin schema (inherits from User)
 const adminSchema: Schema<IAdmin> = new Schema<IAdmin>({
-    AdminID: { type: Number, required: true },
-    Gender: { type: String, required: true },
-    Role: { type: String, required: true },
+    AdminID: { type: Number },
+    Gender: { type: String },
+    usersRequests:[{type: String}]
 });
 
 // Influencer interface
@@ -105,15 +112,16 @@ export interface IInfluencer extends IUser {
     InfluencerID: number;
     Gender: string;
     Contract: string;
+    campaigns: ICampaign[];
 }
 
 // Influencer schema (inherits from User)
 const influencerSchema: Schema<IInfluencer> = new Schema<IInfluencer>({
     InfluencerID: { type: Number, required: true },
     Gender: { type: String, required: true },
+    campaigns: [{ type: Schema.Types.ObjectId, ref: 'Campaign' }],
     Contract: { type: String, required: true },
 });
-
 
 
 // Create models

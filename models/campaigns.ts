@@ -2,9 +2,6 @@ import mongoose, { Schema, Document } from 'mongoose';
 import { IUser } from './Users';
 import { IDonor } from './Users';
 
-
-
-
 // Define interface for Campaign document
 export interface ICampaign extends Document {
     campaignName: string;
@@ -17,11 +14,7 @@ export interface ICampaign extends Document {
     endDate: Date;
     leaderboard: IDonor[];
     description: string;
-<<<<<<< HEAD
-    
-=======
     newsDashboard: string[];
->>>>>>> 1ebe5861f521432fc6e629b9a36dbd790261f93d
 }
 
 // Define schema for Campaign
@@ -34,15 +27,12 @@ const campaignSchema: Schema<ICampaign> = new Schema<ICampaign>({
     currentAmount: { type: Number, default: 0 }, // Set initial value to 0
     startDate: { type: Date, required: true },
     endDate: { type: Date, required: true },
-    leaderboard: { type: [{ userId: String, amountDonated: Number }], default: [] },
+    leaderboard: { type: [{ userId: { type: Schema.Types.ObjectId, ref: 'User', required: true }, amountDonated: Number }], default: [] },
     description: { type: String },
     newsDashboard: { type: [String], default: [] }
+}, {
+    timestamps: true // This will add createdAt and updatedAt fields automatically
 });
-
-
-
-
-
 
 export const Campaign = mongoose.model<ICampaign>('Campaign', campaignSchema);
 
@@ -57,3 +47,4 @@ export const Campaign = mongoose.model<ICampaign>('Campaign', campaignSchema);
 
     //badge -> pic and description, date , aquired (boolean) , user
     //api for every donor   chart  عدد المتبرعين والبلد ,ونسبة التبرع عشان ترجع لل
+
