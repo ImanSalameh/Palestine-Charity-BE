@@ -100,3 +100,11 @@ uertokens->if tokens > FontPrice ->addFont-> upsdatetokins
 // get items -> Done
 // not allowed to buy the same items again -> DONE
 // api for each user that have each items -> DONE
+
+
+
+
+// api modify for changing the campaign status  -> DONE
+//api put for changing the status to suspended -> DONE
+// api put for changing the campaign discreption  ->DONE
+// no options in the shop -> DONE

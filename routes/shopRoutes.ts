@@ -31,9 +31,7 @@ router.get('/borders', (req: Request, res: Response) => {
 // Define API endpoint for purchasing items
 router.post('/buyItem', async (req: Request, res: Response) => {
     try {
-        const userId = req.body.userId;
-        const itemId = req.body.itemId;
-        const selectedOption = req.body.selectedOption; // Chosen option from the array
+        const { userId, itemId } = req.body;
 
         // Retrieve user from database
         const user = await User.findById(userId) as IUser;
@@ -42,7 +40,7 @@ router.post('/buyItem', async (req: Request, res: Response) => {
         }
 
         // Check if the user has already bought the selected item
-        if (user.purchasedItems.includes(selectedOption)) {
+        if (user.purchasedItems.includes(itemId)) {
             return res.status(400).json({ message: 'You have already purchased this item' });
         }
 
@@ -50,11 +48,6 @@ router.post('/buyItem', async (req: Request, res: Response) => {
         const item = shopItems.find(item => item.id === itemId);
         if (!item) {
             return res.status(404).json({ message: 'Item not found' });
-        }
-
-        // Check if selected option is valid for the item
-        if (!item.options.includes(selectedOption)) {
-            return res.status(400).json({ message: 'Invalid option selected' });
         }
 
         // Check if user has enough tokens to purchase the item
@@ -65,8 +58,8 @@ router.post('/buyItem', async (req: Request, res: Response) => {
         // Deduct tokens from user's balance
         user.token -= item.price;
 
-        // Add the selected option to the user's purchased items
-        user.purchasedItems.push(selectedOption);
+        // Add the item ID to the user's purchased items
+        user.purchasedItems.push(itemId);
 
         // Save updated user to database
         await user.save();
@@ -84,7 +77,6 @@ router.post('/buyItem', async (req: Request, res: Response) => {
                 id: item.id,
                 name: item.name,
                 type: item.type,
-                selectedOption: selectedOption,
                 price: item.price
             }
         };
@@ -98,16 +90,7 @@ router.post('/buyItem', async (req: Request, res: Response) => {
 
 // Helper function to get purchased items by type
 const getPurchasedItemsByType = (user: IUser, type: string) => {
-    return shopItems
-        .filter(item => item.type === type)
-        .map(item => {
-            const purchasedOptions = item.options.filter(option => user.purchasedItems.includes(option));
-            return {
-                ...item,
-                options: purchasedOptions
-            };
-        })
-        .filter(item => item.options.length > 0);
+    return shopItems.filter(item => item.type === type && user.purchasedItems.includes(item.id));
 };
 
 // Get Fonts purchased by the user

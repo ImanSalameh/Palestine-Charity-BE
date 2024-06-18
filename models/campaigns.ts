@@ -15,9 +15,13 @@ export interface ICampaign extends Document {
     currentAmount: number;
     startDate: Date;
     endDate: Date;
-    leaderboard: IDonor[]; //  اسم الدونر والمبلغ الاجمالي الي تبرع في بهاي الكامبين
+    leaderboard: IDonor[];
     description: string;
+<<<<<<< HEAD
     
+=======
+    newsDashboard: string[];
+>>>>>>> 1ebe5861f521432fc6e629b9a36dbd790261f93d
 }
 
 // Define schema for Campaign
@@ -31,7 +35,8 @@ const campaignSchema: Schema<ICampaign> = new Schema<ICampaign>({
     startDate: { type: Date, required: true },
     endDate: { type: Date, required: true },
     leaderboard: { type: [{ userId: String, amountDonated: Number }], default: [] },
-    description: { type: String }
+    description: { type: String },
+    newsDashboard: { type: [String], default: [] }
 });
 
 

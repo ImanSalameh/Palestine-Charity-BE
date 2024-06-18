@@ -1,12 +1,12 @@
 // campaignRoutes.ts
 
-import {Router, Request, Response, NextFunction} from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { IUser, User } from '../models/Users';
 import mongoose from 'mongoose';
 import { ICampaign, Campaign } from '../models/campaigns';
 import { Donation } from '../models/donation';
 import multer from "multer";
-import {cloudinary} from "../cloudinary";
+import { cloudinary } from "../cloudinary";
 
 const router = Router();
 
@@ -34,7 +34,7 @@ router.post('/upload', upload.single('image'), async (req: Request, res: Respons
 // Campaign Add route
 router.post('/addcamp', upload.single('image'), async (req: Request, res: Response) => {
     try {
-        const { campaignName, organizationName, currentAmount, goalAmount, status, startDate, endDate, description} = req.body;
+        const { campaignName, organizationName, currentAmount, goalAmount, status, startDate, endDate, description } = req.body;
 
         // Check if image file exists
         if (!req.file) {
@@ -64,20 +64,76 @@ router.post('/addcamp', upload.single('image'), async (req: Request, res: Respon
     }
 });
 
+// // Campaign get route
+// router.get('/', async (req: Request, res: Response) => {
+//     try {
+//         // Query all campaigns from the database, excluding the leaderboard field
+//         const campaigns = await Campaign.find({}, '-leaderboard');
+
+//         res.status(200).json({ campaigns });
+
+
+//     } catch (error) {
+//         console.error('Error retrieving campaigns:', error);
+//         res.status(500).json({ message: 'Internal server error' });
+//     }
+// });
+
+
 // Campaign get route
 router.get('/', async (req: Request, res: Response) => {
     try {
         // Query all campaigns from the database, excluding the leaderboard field
         const campaigns = await Campaign.find({}, '-leaderboard');
 
-        res.status(200).json({ campaigns });
+        // Current date
+        const currentDate = new Date();
 
+        // Loop through each campaign and update the status if necessary
+        for (const campaign of campaigns) {
+            if (campaign.endDate < currentDate && campaign.status !== 'Ended') {
+                campaign.status = 'Ended';
+                await campaign.save(); // Save the updated campaign to the database
+            }
+        }
+
+        res.status(200).json({ campaigns });
 
     } catch (error) {
         console.error('Error retrieving campaigns:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 });
+
+// Update campaign description
+router.put('/:id/updateDescription', async (req: Request, res: Response) => {
+    try {
+        const campaignId = req.params.id;
+        const { description } = req.body;
+
+        // Validate input
+        if (!description) {
+            return res.status(400).json({ message: 'Description is required' });
+        }
+
+        // Find campaign by ID
+        const campaign = await Campaign.findById(campaignId);
+        if (!campaign) {
+            return res.status(404).json({ message: 'Campaign not found' });
+        }
+
+        // Update description
+        campaign.description = description;
+        await campaign.save();
+
+        res.status(200).json({ message: 'Campaign description updated successfully', campaign });
+    } catch (error) {
+        console.error('Error updating campaign description:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
 
 
 router.get('/campaign/:campaignId', async (req, res) => {
@@ -121,6 +177,7 @@ router.get('/campaign/:campaignId', async (req, res) => {
                 startDate: campaign.startDate,
                 endDate: campaign.endDate,
                 description: campaign.description,
+                newsDashboard: campaign.newsDashboard,
                 leaderboard: leaderboardResult.leaderboard
             },
             donations
@@ -132,6 +189,34 @@ router.get('/campaign/:campaignId', async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 });
+
+
+
+
+// PUT endpoint to suspend a campaign
+router.put('/campaign/:id/suspend', async (req: Request, res: Response) => {
+    try {
+        const campaignId = req.params.id;
+
+        // Find the campaign by ID
+        const campaign = await Campaign.findById(campaignId);
+        if (!campaign) {
+            return res.status(404).json({ message: 'Campaign not found' });
+        }
+
+        // Update the status to "Suspended"
+        campaign.status = "Suspended";
+
+        // Save the updated campaign
+        await campaign.save();
+
+        res.status(200).json({ message: 'Campaign status updated to Suspended', campaign });
+    } catch (error) {
+        console.error('Error updating campaign status:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
 
 
 
@@ -310,6 +395,60 @@ router.get('/campaigns/search/:name', async (req: Request, res: Response) => {
     }
 });
 
+router.post('/campaigns/:campaignId/news', async (req: Request, res: Response) => {
+    try {
+        const campaignId = req.params.campaignId;
+        const news = req.body.news; // Assuming the request body contains a 'news' field
+
+        if (!news) {
+            return res.status(400).json({ message: 'News content is required' });
+        }
+
+        const updatedCampaign = await Campaign.findByIdAndUpdate(
+            campaignId,
+            { $push: { newsDashboard: news } },
+            { new: true } // Return the updated document
+        );
+
+        if (!updatedCampaign) {
+            return res.status(404).json({ message: 'Campaign not found' });
+        }
+
+        res.status(201).json(updatedCampaign.newsDashboard);
+    } catch (error) {
+        console.error('Error adding news to campaign:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+router.delete('/campaigns/:campaignId/news/:index', async (req: Request, res: Response) => {
+    try {
+        const campaignId = req.params.campaignId;
+        const index = parseInt(req.params.index); // Convert index to a number
+
+        // Find the campaign
+        const campaign = await Campaign.findById(campaignId);
+        if (!campaign) {
+            return res.status(404).json({ message: 'Campaign not found' });
+        }
+
+        // Check if the index is valid
+        if (index < 0 || index >= campaign.newsDashboard.length) {
+            return res.status(400).json({ message: 'Invalid index' });
+        }
+
+        // Remove the news item at the specified index
+        campaign.newsDashboard.splice(index, 1);
+
+        // Save the updated campaign
+        await campaign.save();
+
+        res.json(campaign.newsDashboard);
+    } catch (error) {
+        console.error('Error deleting news from campaign:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});;
 
 
 export default router;

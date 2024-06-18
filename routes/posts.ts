@@ -2,7 +2,9 @@ import { Router, Request, Response } from 'express';
 import { IUser, User } from '../models/Users';
 import { ICampaign, Campaign } from '../models/campaigns';
 import shopItems from '../models/shopItem';
-
+import {Donation} from "../models/donation";
+import mongoose from "mongoose";
+import { ObjectId } from 'mongoose';
 
 const router = Router();
 
@@ -41,8 +43,6 @@ router.get('/campaigns', async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 });
-
-
 
 
 // Define route for donation rate by address
@@ -125,8 +125,72 @@ router.get('/chart', async (req, res) => {
     }
 });
 
+router.get('/chart/:campaignId', async (req, res) => {
+    try {
+        const campaignId = req.params.campaignId;
 
+        // Fetch all donation records for the specified campaign
+        const donationRecords = await User.aggregate([
+            {
+                $unwind: "$Donationrecords" // Expand Donationrecords array
+            },
+            {
+                $lookup: {
+                    from: "donations", // Collection name
+                    localField: "Donationrecords",
+                    foreignField: "_id",
+                    as: "donationDetails"
+                }
+            },
+            {
+                $unwind: "$donationDetails" // Expand donationDetails array
+            },
+            {
+                $match: { "donationDetails.campaign": new mongoose.Types.ObjectId(campaignId) } // Match donations for the specified campaign
+            },
+            {
+                $group: {
+                    _id: { address: "$Address" }, // Group by address
+                    totalDonation: { $sum: "$donationDetails.amount" }
+                }
+            },
+            {
+                $project: {
+                    _id: 0, // Exclude _id field from results
+                    address: "$_id.address", // Project the address field
+                    totalDonation: 1 // Include total donation for each address
+                }
+            },
+            {
+                $sort: { totalDonation: -1 } // Sort in descending order based on totalDonation
+            }
+        ]);
 
+        if (donationRecords.length === 0) {
+            console.log("No donation records found for the campaign:", campaignId);
+            return res.status(404).json({ message: "No donation records found for the campaign." });
+        }
+
+        // Calculate total donation for the campaign
+        const totalDonationAllPlaces = donationRecords.reduce((total, record) => total + record.totalDonation, 0);
+
+        // Calculate donation rate for each address
+        const places = donationRecords.map(record => ({
+            address: record.address,
+            totalDonation: record.totalDonation,
+            donationRate: (record.totalDonation / totalDonationAllPlaces) * 100 // Calculate donation rate
+        }));
+
+        // Return the donation records with addresses, total donation, and donation rate for the campaign
+        res.json({
+            totalDonationAllPlaces: totalDonationAllPlaces,
+            places: places
+        });
+    } catch (error) {
+        console.error('Error fetching donation records for the campaign:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
 
 export default router;
 
