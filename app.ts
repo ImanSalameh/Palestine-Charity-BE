@@ -1,7 +1,8 @@
 import express, { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import { User } from './models/Users';
-
+import * as dotenv from 'dotenv';
+import { cloudinary } from './cloudinary';
 
 // Import separate route files
 import postsRoutes from './routes/posts';
@@ -11,10 +12,11 @@ import badgeRoutes from './routes/badgeRoutes';
 import donationRoutes from './routes/donationRoutes';
 import userRouts from './routes/userRoutes';
 import shopRouts from './routes/shopRoutes';
-
-import cors from 'cors';
 import rolesRoutes from "./routes/rolesRoutes";
 
+import cors from 'cors';
+
+dotenv.config();
 const app = express();
 const port = 3000;
 
