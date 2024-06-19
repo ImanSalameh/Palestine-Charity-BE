@@ -2,16 +2,17 @@
 
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
-import {Admin, IUser, User} from '../models/Users';
+import {Admin, IUser, Organization, User} from '../models/Users';
 import { sign } from 'jsonwebtoken';
 import { Donation } from '../models/donation';
+import mongoose from "mongoose";
 
 
 const router = Router();
 
-router.post('/register', async (req, res) => {
+router.post('/register', async (req: Request, res: Response) => {
     try {
-        const { Name, Email, Password, Age, PhoneNumber, Address, Badges, Token, favorite, Role } = req.body;
+        const { Name, Email, Password, Age, PhoneNumber, Address, Badges, Token, favorite, Role, Type, Description, Revenue, CEO, Industry } = req.body;
 
         // Check if email field is provided
         if (!Email) {
@@ -34,21 +35,47 @@ router.post('/register', async (req, res) => {
             activated = false;
         }
 
-        // Create the new user
-        const newUser = new User({
-            Name,
-            Email,
-            Password: hashedPassword,
-            Age,
-            PhoneNumber,
-            Address,
-            Badges,
-            Token,
-            favorite,
-            Role,
-            Donationrecords: [], // Initialize as an empty array
-            activated
-        });
+        let newUser;
+
+        // Create the appropriate user based on role
+        if (Role === 'Organization') {
+            newUser = new Organization({
+                Name,
+                Email,
+                Password: hashedPassword,
+                Age,
+                PhoneNumber,
+                Address,
+                Badges,
+                Token,
+                favorite,
+                Role,
+                Donationrecords: [],
+                activated,
+                OrganizationID: new mongoose.Types.ObjectId().toString(),
+                Type,
+                Description,
+                Revenue,
+                CEO,
+                Industry,
+                campaigns: []
+            });
+        } else {
+            newUser = new User({
+                Name,
+                Email,
+                Password: hashedPassword,
+                Age,
+                PhoneNumber,
+                Address,
+                Badges,
+                Token,
+                favorite,
+                Role,
+                Donationrecords: [],
+                activated
+            });
+        }
 
         // Save the user to the database
         const savedUser = await newUser.save();
@@ -72,7 +99,6 @@ router.post('/register', async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 });
-
 
 
 
