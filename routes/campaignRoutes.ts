@@ -1,7 +1,7 @@
 // campaignRoutes.ts
 
 import {Router, Request, Response, NextFunction} from 'express';
-import {IUser, Organization, User} from '../models/Users';
+import {IOrganization, IUser, Organization, User} from '../models/Users';
 import mongoose from 'mongoose';
 import { ICampaign, Campaign } from '../models/campaigns';
 import { Donation } from '../models/donation';
@@ -31,37 +31,55 @@ router.post('/upload', upload.single('image'), async (req: Request, res: Respons
     }
 });
 
+
 // Campaign Add route
 
-router.post('/addcamp', upload.single('image'), async (req: Request, res: Response) => {
+router.post('/upload', upload.single('image'), async (req: Request, res: Response) => {
     try {
-        const { campaignName, userId,organizationName, currentAmount, goalAmount, status, startDate, endDate, description } = req.body;
-
-        // Check if image file exists
         if (!req.file) {
-            return res.status(400).json({ message: 'No image uploaded' });
+            return res.status(400).json({ message: 'No file uploaded' });
         }
 
         // Upload image to Cloudinary
         const result = await cloudinary.uploader.upload(req.file.path);
 
-        // Trim and cast the userId to ObjectId
-        const trimmedUserId = userId;
-        const objectId = new mongoose.Types.ObjectId(trimmedUserId);
+        // If successful, return Cloudinary URL of the uploaded image
+        res.status(200).json({ imageUrl: result.secure_url });
+    } catch (error) {
+        console.error('Error uploading image:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
 
-        // Find the organization by userId
-        const organization = await Organization.findOne({ _id: objectId, Role: 'Organization' });
-        console.log('Trimmed UserID:', trimmedUserId);
-        console.log('ObjectID:', objectId);
-        if (!organization) {
-            return res.status(404).json({ message: 'Organization not found' });
+router.post('/addcamp', upload.single('image'), async (req: Request, res: Response) => {
+    const { campaignName, userId, currentAmount, goalAmount, status, startDate, endDate, description, campaignImage } = req.body;
+
+    try {
+        let imageUrl = campaignImage;
+
+        if (req.file) {
+            const result = await cloudinary.uploader.upload(req.file.path);
+            imageUrl = result.secure_url;
         }
 
-        // Create the new campaign
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ message: 'Invalid userId' });
+        }
+
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (user.Role !== 'Organization') {
+            return res.status(403).json({ message: 'User is not an organization' });
+        }
+
         const newCampaign: ICampaign = new Campaign({
             campaignName,
-            campaignImage: result.secure_url,
-            organizationName,
+            campaignImage: imageUrl,
+            organizationName: user.Name,
             currentAmount,
             goalAmount,
             status,
@@ -70,16 +88,16 @@ router.post('/addcamp', upload.single('image'), async (req: Request, res: Respon
             description
         });
 
-        // Save the new campaign
         const savedCampaign = await newCampaign.save();
 
-        // Add the campaign to the organization's campaigns array
-        organization.campaigns.push(savedCampaign._id);
 
-        // Save the organization
-        await organization.save();
+        if (!(user as IOrganization).campaigns) {
+            (user as IOrganization).campaigns = [];
+        }
 
+        (user as IOrganization).campaigns.push(savedCampaign._id);
 
+        await user.save();
 
         res.status(201).json({ message: 'Campaign added successfully' });
     } catch (error) {
@@ -87,6 +105,11 @@ router.post('/addcamp', upload.single('image'), async (req: Request, res: Respon
         res.status(500).json({ message: 'Internal server error' });
     }
 });
+
+function isValidImageUrl(url: string): boolean {
+    // Basic check to see if the URL is a valid image URL
+    return /^https?:\/\/.+\.(jpg|jpeg|png|gif)$/i.test(url);
+}
 
 // // Campaign get route
 // router.get('/', async (req: Request, res: Response) => {
