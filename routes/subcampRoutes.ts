@@ -239,6 +239,24 @@ router.get('/sub-campaigns/:subCampaignId/leaderboard', async (req: Request, res
     }
 });
 
+
+
+// Get all sub-campaigns of a campaign
+router.get('/campaigns/:id/sub-campaigns', async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+
+        // Find sub-campaigns by parent campaign ID
+        const subCampaigns = await SubCampaign.find({ parentCampaign: id });
+
+        res.status(200).json(subCampaigns);
+    } catch (error) {
+        console.error('Error fetching sub-campaigns:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
 // Approve a sub-campaign
 router.post('/sub-campaigns/:id/approve', async (req: Request, res: Response) => {
     try {
@@ -258,19 +276,56 @@ router.post('/sub-campaigns/:id/approve', async (req: Request, res: Response) =>
     }
 });
 
-// Get all sub-campaigns of a campaign
-router.get('/campaigns/:id/sub-campaigns', async (req: Request, res: Response) => {
+
+
+// API endpoint to merge sub-campaign donations with parent campaign
+router.post('/sub-campaigns/merge-donations', async (req: Request, res: Response) => {
     try {
-        const { id } = req.params;
+        const { subCampaignId } = req.body;
 
-        // Find sub-campaigns by parent campaign ID
-        const subCampaigns = await SubCampaign.find({ parentCampaign: id });
+        // Validate subCampaignId
+        if (!subCampaignId) {
+            return res.status(400).json({ message: 'Sub-campaign ID is required' });
+        }
 
-        res.status(200).json(subCampaigns);
+        // Find the sub-campaign
+        const subCampaign = await SubCampaign.findById(subCampaignId);
+        if (!subCampaign) {
+            return res.status(404).json({ message: 'Sub-campaign not found' });
+        }
+
+        // Get the parent campaign ID from the sub-campaign
+        const parentCampaignId = subCampaign.parentCampaign;
+
+        // Find the parent campaign
+        const parentCampaign = await Campaign.findById(parentCampaignId);
+        if (!parentCampaign) {
+            return res.status(404).json({ message: 'Parent campaign not found' });
+        }
+
+        // Calculate the total donation amount from the sub-campaign
+        const subCampaignDonations = await Donation.aggregate([
+            { $match: { subCampaign: subCampaign._id } },
+            { $group: { _id: null, totalAmount: { $sum: '$amount' } } }
+        ]);
+
+        const totalAmount = subCampaignDonations.length > 0 ? subCampaignDonations[0].totalAmount : 0;
+
+        // Update the parent campaign's total donation amount
+        parentCampaign.currentAmount += totalAmount;
+        await parentCampaign.save();
+
+        // Respond with success message
+        res.status(200).json({ message: 'Donation amounts merged successfully' });
     } catch (error) {
-        console.error('Error fetching sub-campaigns:', error);
+        console.error('Error merging donations:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 });
+
+
+
+
+
 
 export default router;
