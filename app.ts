@@ -17,6 +17,8 @@ import rolesRoutes from "./routes/rolesRoutes";
 import cors from 'cors';
 import mailRoutes from "./routes/mailRoutes";
 
+import subCampaignRoutes from './routes/subcampRoutes';
+
 dotenv.config();
 const app = express();
 const port = 3000;
@@ -42,7 +44,8 @@ mongoose.connect(mongoURI)
     app.use('/posts', userRouts);
     app.use('/posts', shopRouts);
     app.use('/posts', rolesRoutes);
-    app.use('/api', mailRoutes)
+    app.use('/api', mailRoutes);
+    app.use('/posts', subCampaignRoutes);
 
 
     // Start the Express server

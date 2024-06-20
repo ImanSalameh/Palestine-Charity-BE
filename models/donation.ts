@@ -1,11 +1,13 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import { IUser } from './Users';
 import { ICampaign } from './campaigns';
+import { ISubCampaign } from './subcamp';
 
 // Define the interface for the Donation document
 export interface IDonation extends Document {
     user?: import('mongoose').Types.ObjectId | 'Anonymous'; // Make user field optional
-    campaign: import('mongoose').Types.ObjectId;
+    campaign?: import('mongoose').Types.ObjectId; // Campaign reference
+    subCampaign?: import('mongoose').Types.ObjectId; // Sub-campaign reference
     amount: number;
     donationDate: Date;
     tokens: number; // Tokens earned for the donation
@@ -16,7 +18,8 @@ export interface IDonation extends Document {
 // Define the schema for the Donation document
 const donationSchema: Schema<IDonation> = new Schema<IDonation>({
     user: { type: Schema.Types.Mixed, required: false }, // Make user field optional
-    campaign: { type: Schema.Types.ObjectId, ref: 'Campaign', required: true },
+    campaign: { type: Schema.Types.ObjectId, ref: 'Campaign', required: false }, // Make campaign optional
+    subCampaign: { type: Schema.Types.ObjectId, ref: 'SubCampaign', required: false }, // Make sub-campaign optional
     amount: { type: Number, required: true },
     donationDate: { type: Date, default: Date.now },
     tokens: { type: Number, default: 0 }, // Default token value is 0
@@ -24,7 +27,7 @@ const donationSchema: Schema<IDonation> = new Schema<IDonation>({
     anonymous: { type: Boolean, default: false } // Add anonymous field with default value false
 });
 
-// to calculate and set the tokens earned before saving
+// Calculate and set the tokens earned before saving
 donationSchema.pre<IDonation>('save', function (next) {
     // Check if user is provided
     if (this.user) {
@@ -32,12 +35,10 @@ donationSchema.pre<IDonation>('save', function (next) {
         this.tokens = this.amount * 10;
     }
     next();
-
 });
 
 // Create and export the Donation model
 export const Donation = mongoose.model<IDonation>('Donation', donationSchema);
-
 
 //when we return the suer has to return the badges   DONE
 
