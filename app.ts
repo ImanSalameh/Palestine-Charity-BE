@@ -15,6 +15,7 @@ import shopRouts from './routes/shopRoutes';
 import rolesRoutes from "./routes/rolesRoutes";
 
 import cors from 'cors';
+import mailRoutes from "./routes/mailRoutes";
 
 dotenv.config();
 const app = express();
@@ -25,7 +26,7 @@ app.use(express.json()); // Use built-in JSON parsing middleware
 app.use(cors({ origin: 'http://localhost:4200' }));
 app.use('/posts', postsRoutes);
 
-// MongoDB connection URI 
+// MongoDB connection URI
 const mongoURI = 'mongodb+srv://imansalameh:iman2002@cluster1.xttal40.mongodb.net/?retryWrites=true&w=majority&appName=Cluster1';
 
 // Connect to MongoDB
@@ -41,6 +42,7 @@ mongoose.connect(mongoURI)
     app.use('/posts', userRouts);
     app.use('/posts', shopRouts);
     app.use('/posts', rolesRoutes);
+    app.use('/api', mailRoutes)
 
 
     // Start the Express server
