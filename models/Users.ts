@@ -1,8 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import bcrypt from 'bcrypt';
-import {Campaign, ICampaign} from './campaigns';
+import { Campaign, ICampaign } from './campaigns';
 import { IBadge, Badge } from '../models/badge';
-
 
 // Define interface for User document
 export interface IUser extends Document {
@@ -23,14 +22,16 @@ export interface IUser extends Document {
     font: string;
     Role: 'Influencer' | 'Organization' | 'Admin' | 'Donor';
     purchasedItems: string[]; // Add purchased items field
+    isApproved: boolean; // Add approval field
+    campaignApprovals: mongoose.Types.ObjectId[]; // Add campaign approvals field
 }
 
 // Define schema for User
 const userSchema: Schema<IUser> = new Schema<IUser>({
     Name: { type: String },
-    profilePicture: {type: String, default:'hello'},
-    biography: {type: String, default: 'PalHope user'},
-    backgroundPicture: {type: String},
+    profilePicture: { type: String, default: 'hello' },
+    biography: { type: String, default: 'PalHope user' },
+    backgroundPicture: { type: String },
     token: { type: Number, default: 0 },
     Address: { type: String },
     Badges: { type: [Schema.Types.ObjectId], ref: 'Badge', default: [] }, // Use ref to 'Badge' and set default value to empty array
@@ -42,14 +43,16 @@ const userSchema: Schema<IUser> = new Schema<IUser>({
     Password: { type: String },
     activated:{ type: Boolean },
     font: { type: String, default: 'noClass' },
-    Role:{
+    activated: { type: Boolean },
+    Role: {
         type: String,
         enum: ['Influencer', 'Organization', 'Admin', 'Donor'],
         default: 'Donor'
-},
-    purchasedItems: { type: [String], default: [] }
+    },
+    purchasedItems: { type: [String], default: [] },
+    isApproved: { type: Boolean, default: false }, // Add approval field
+    campaignApprovals: [{ type: Schema.Types.ObjectId, ref: 'Campaign' }] // Add campaign approvals field
 }, { discriminatorKey: 'type' });
-
 
 // Donor interface
 export interface IDonor extends IUser {
@@ -69,10 +72,7 @@ const donorSchema: Schema<IDonor> = new Schema<IDonor>({
     Gender: { type: String, required: true },
 });
 
-
-
-
-// Organizat
+// Organization interface
 export interface IOrganization extends IUser {
     OrganizationID: string;
     Type: string;
@@ -82,7 +82,6 @@ export interface IOrganization extends IUser {
     campaigns: ICampaign[];
     Industry: string;
 }
-
 
 // Organization schema (inherits from User)
 const organizationSchema: Schema<IOrganization> = new Schema<IOrganization>({
@@ -106,7 +105,7 @@ export interface IAdmin extends IUser {
 const adminSchema: Schema<IAdmin> = new Schema<IAdmin>({
     AdminID: { type: Number },
     Gender: { type: String },
-    usersRequests:[{type: String}]
+    usersRequests: [{ type: String }]
 });
 
 // Influencer interface
@@ -124,7 +123,6 @@ const influencerSchema: Schema<IInfluencer> = new Schema<IInfluencer>({
     campaigns: [{ type: Schema.Types.ObjectId, ref: 'Campaign' }],
     Contract: { type: String, required: true },
 });
-
 
 // Create models
 export const User = mongoose.model<IUser>('User', userSchema);
