@@ -1,12 +1,13 @@
 // campaignRoutes.ts
 
-import {Router, Request, Response, NextFunction} from 'express';
-import {IOrganization, IUser, Organization, User} from '../models/Users';
+import { Router, Request, Response, NextFunction } from 'express';
+import { IOrganization, IUser, Organization, User } from '../models/Users';
 import mongoose from 'mongoose';
 import { ICampaign, Campaign } from '../models/campaigns';
 import { Donation } from '../models/donation';
 import multer from "multer";
-import {cloudinary} from "../cloudinary";
+import { cloudinary } from "../cloudinary";
+import SubCampaign from '../models/subcamp';
 
 const router = Router();
 
@@ -152,6 +153,10 @@ router.get('/', async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 });
+
+
+
+
 
 // Update campaign description
 router.put('/:id/updateDescription', async (req: Request, res: Response) => {

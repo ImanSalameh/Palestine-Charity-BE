@@ -129,10 +129,11 @@ router.post('/donate', async (req: Request, res: Response) => {
             await checkAndAwardBadges(userId, user.token); // Assuming token is the field storing user's tokens
         }
 
+
         // Send confirmation email to the user
         if (user) {
             const emailText = `Dear ${anonymous ? 'Anonymous Donor' : user.Name},\n\nThank you for your generous donation of $${amount} to the ${campaign.campaignName} campaign. Your support is greatly appreciated.\n\nBest regards,\n PalHop Team`;
-            const emailHtml = `<p>Dear ${anonymous ? 'Anonymous Donor' : user.Name},</p><p>Thank you for your generous donation of $${amount} to the ${campaign.campaignName} campaign. Your support is greatly appreciated.</p><p>Best regards,<br>\n PalHop Team</p>`;
+            const emailHtml = `<p>Dear ${anonymous ? 'Anonymous Donor' : user.Name},</p><p>Thank you for your generous donation of $${amount} to the ${campaign.campaignName} campaign. Your support is greatly appreciated.</p><p>Best regards,<br>\nPalHop Team</p>`;
             const emailSubject = 'Thank You for Your Donation';
 
             await sendMail(user.Email, emailSubject, emailText, emailHtml);
