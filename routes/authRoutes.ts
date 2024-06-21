@@ -2,7 +2,7 @@
 
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
-import {Admin, IUser, Organization, User} from '../models/Users';
+import {Admin, Donor, Influencer, IUser, Organization, User} from '../models/Users';
 import { sign } from 'jsonwebtoken';
 import { Donation } from '../models/donation';
 import mongoose from "mongoose";
@@ -12,7 +12,7 @@ const router = Router();
 
 router.post('/register', async (req: Request, res: Response) => {
     try {
-        const { Name, Email, Password, Age, PhoneNumber, Address, Badges, Token, favorite, Role, Type, Description, Revenue, CEO, Industry } = req.body;
+        const { Name, Email, Password, Age, PhoneNumber, Address, Badges, Token, favorite, Role, Type, Description, Revenue, CEO, Industry, DonorID, amountDonated, DonorName, PaymentMethod, Gender, InfluencerID, Contract, AdminID } = req.body;
 
         // Check if email field is provided
         if (!Email) {
@@ -38,43 +38,106 @@ router.post('/register', async (req: Request, res: Response) => {
         let newUser;
 
         // Create the appropriate user based on role
-        if (Role === 'Organization') {
-            newUser = new Organization({
-                Name,
-                Email,
-                Password: hashedPassword,
-                Age,
-                PhoneNumber,
-                Address,
-                Badges,
-                Token,
-                favorite,
-                Role,
-                Donationrecords: [],
-                activated,
-                OrganizationID: new mongoose.Types.ObjectId().toString(),
-                Type,
-                Description,
-                Revenue,
-                CEO,
-                Industry,
-                campaigns: []
-            });
-        } else {
-            newUser = new User({
-                Name,
-                Email,
-                Password: hashedPassword,
-                Age,
-                PhoneNumber,
-                Address,
-                Badges,
-                Token,
-                favorite,
-                Role,
-                Donationrecords: [],
-                activated
-            });
+        switch (Role) {
+            case 'Organization':
+                newUser = new Organization({
+                    Name,
+                    Email,
+                    Password: hashedPassword,
+                    Age,
+                    PhoneNumber,
+                    Address,
+                    Badges,
+                    Token,
+                    favorite,
+                    Role,
+                    Donationrecords: [],
+                    activated,
+                    OrganizationID: new mongoose.Types.ObjectId().toString(),
+                    Type,
+                    Description,
+                    Revenue,
+                    CEO,
+                    Industry,
+                    campaigns: []
+                });
+                break;
+            case 'Influencer':
+                newUser = new Influencer({
+                    Name,
+                    Email,
+                    Password: hashedPassword,
+                    Age,
+                    PhoneNumber,
+                    Address,
+                    Badges,
+                    Token,
+                    favorite,
+                    Role,
+                    Donationrecords: [],
+                    activated,
+                    InfluencerID,
+                    Gender,
+                    Contract,
+                    campaigns: []
+                });
+                break;
+            case 'Donor':
+                newUser = new Donor({
+                    Name,
+                    Email,
+                    Password: hashedPassword,
+                    Age,
+                    PhoneNumber,
+                    Address,
+                    Badges,
+                    Token,
+                    favorite,
+                    Role,
+                    Donationrecords: [],
+                    activated,
+                    DonorID,
+                    amountDonated,
+                    DonorName,
+                    PaymentMethod,
+                    Gender
+                });
+                break;
+            case 'Admin':
+                newUser = new Admin({
+                    Name,
+                    Email,
+                    Password: hashedPassword,
+                    Age,
+                    PhoneNumber,
+                    Address,
+                    Badges,
+                    Token,
+                    favorite,
+                    Role,
+                    Donationrecords: [],
+                    activated,
+                    AdminID,
+                    Gender,
+                    usersRequests: []
+                });
+                break;
+            default:
+                newUser = new User({
+                    Name,
+                    Email,
+                    Password: hashedPassword,
+                    Age,
+                    PhoneNumber,
+                    Address,
+                    Badges,
+                    Token,
+                    favorite,
+                    Role,
+                    Donationrecords: [],
+                    activated
+                });
+                break;
         }
 
         // Save the user to the database
