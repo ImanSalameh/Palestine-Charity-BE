@@ -45,6 +45,7 @@ router.get('/user/:userId', async (req: Request, res: Response) => {
                 Badges: user.Badges,
                 favorite: user.favorite,
                 PhoneNumber: user.PhoneNumber,
+                font: user.font,
                 Role: user.Role,
                 Donationrecords: donations.map(donation => ({
                     _id: donation._id,
@@ -175,6 +176,22 @@ router.put('/:id/biography', async (req: Request, res: Response) => {
         res.send(user);
     } catch (error) {
         res.status(500).send({ message: (error as Error).message });
+    }
+});
+
+router.put('/:userId/font', async (req, res) => {
+    const { userId } = req.params;
+    const { font } = req.body; // Assuming font is sent in the request body
+
+    try {
+        const user = await User.findByIdAndUpdate(userId, { $set: { font } }, { new: true }); // Update font and return updated user
+        if (!user) {
+            return res.status(404).send('User not found');
+        }
+        res.send(user); // Send the updated user object
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Internal server error');
     }
 });
 

@@ -19,6 +19,7 @@ export interface IUser extends Document {
     Email: string;
     Password: string;
     activated: boolean;
+    font: string;
     Role: 'Influencer' | 'Organization' | 'Admin' | 'Donor';
     purchasedItems: string[]; // Add purchased items field
     isApproved: boolean; // Add approval field
@@ -40,6 +41,8 @@ const userSchema: Schema<IUser> = new Schema<IUser>({
     PhoneNumber: { type: String },
     Email: { type: String },
     Password: { type: String },
+    activated:{ type: Boolean },
+    font: { type: String, default: 'noClass' },
     activated: { type: Boolean },
     Role: {
         type: String,
