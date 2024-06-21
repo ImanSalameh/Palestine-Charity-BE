@@ -20,6 +20,7 @@ export interface IUser extends Document {
     Email: string;
     Password: string;
     activated: boolean;
+    font: string;
     Role: 'Influencer' | 'Organization' | 'Admin' | 'Donor';
     purchasedItems: string[]; // Add purchased items field
 }
@@ -40,6 +41,7 @@ const userSchema: Schema<IUser> = new Schema<IUser>({
     Email: { type: String },
     Password: { type: String },
     activated:{ type: Boolean },
+    font: { type: String, default: 'noClass' },
     Role:{
         type: String,
         enum: ['Influencer', 'Organization', 'Admin', 'Donor'],
