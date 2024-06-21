@@ -43,7 +43,6 @@ const userSchema: Schema<IUser> = new Schema<IUser>({
     Password: { type: String },
     activated:{ type: Boolean },
     font: { type: String, default: 'noClass' },
-    activated: { type: Boolean },
     Role: {
         type: String,
         enum: ['Influencer', 'Organization', 'Admin', 'Donor'],
