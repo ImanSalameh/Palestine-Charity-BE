@@ -11,68 +11,6 @@ import { sendMail } from '../mailer';
 
 const router = Router();
 
-// // Route to make a donation
-// router.post('/donate', async (req: Request, res: Response) => {
-//     try {
-//         const { userId, campaignId, amount, anonymous } = req.body;
-
-//         // Create a new donation
-//         const newDonation = new Donation({
-//             user: anonymous ? 'Anonymous' : userId,
-//             campaign: campaignId,
-//             amount: amount,
-//             tokens: anonymous ? amount * 10 : 0 // Calculate tokens earned for anonymous donations
-//         });
-
-//         // Save the donation
-//         const savedDonation = await newDonation.save();
-
-//         // Fetch the campaign document
-//         const campaign = await Campaign.findById(campaignId);
-//         if (!campaign) {
-//             return res.status(404).json({ message: 'Campaign not found' });
-//         }
-
-//         // Update the current amount of the campaign
-//         campaign.currentAmount += amount;
-//         await campaign.save();
-
-//         // Update the user's token balance
-//         if (!anonymous) {
-//             await User.findByIdAndUpdate(userId, { $inc: { token: amount * 10 } });
-//         }
-
-//         // Update the user's total tokens for anonymous donations
-//         if (anonymous) {
-//             const user = await User.findById(userId);
-//             if (user) {
-//                 user.token += amount * 10;
-//                 await user.save();
-//                 // Check and award badges to the user for anonymous donations
-//                 await checkAndAwardBadges(userId, user.token); // Assuming token is the field storing user's tokens
-//             }
-//         }
-
-//         // Update the user's donation records
-//         const user: IUser | null = await User.findById(userId);
-//         if (user && !anonymous) {
-//             user.Donationrecords.push(savedDonation._id);
-//             await user.save();
-
-//             // Check and award badges to the user
-//             await checkAndAwardBadges(userId, user.token); // Assuming token is the field storing user's tokens
-//         }
-
-//         //res.status(201).json({ message: 'Donation made successfully', donation: savedDonation });
-//         res.status(201).json({ message: 'Donation made successfully' });
-//     } catch (error) {
-//         console.error('Error making donation:', error);
-//         res.status(500).json({ message: 'Internal server error' });
-//     }
-// });
-
-
-
 
 
 // Route to make a donation

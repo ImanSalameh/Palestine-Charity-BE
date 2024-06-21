@@ -54,9 +54,7 @@ router.post('/sub-campaigns', async (req: Request, res: Response) => {
 });
 
 
-
 // Route to donate to a sub-campaign
-
 router.post('/donate/sub-campaign', async (req: Request, res: Response) => {
     try {
         const { userId, subCampaignId, amount, anonymous } = req.body;
@@ -69,7 +67,7 @@ router.post('/donate/sub-campaign', async (req: Request, res: Response) => {
         // Create a new donation
         const newDonation = new Donation({
             user: anonymous ? 'Anonymous' : userId,
-            campaign: subCampaignId,
+            subCampaign: subCampaignId,
             amount: amount,
             tokens: anonymous ? amount * 10 : 0
         });
@@ -77,7 +75,7 @@ router.post('/donate/sub-campaign', async (req: Request, res: Response) => {
         const savedDonation = await newDonation.save();
 
         // Fetch sub-campaign
-        let subCampaign: ISubCampaign | null = await SubCampaign.findById(subCampaignId);
+        let subCampaign: any = await SubCampaign.findById(subCampaignId);
         if (!subCampaign) {
             return res.status(404).json({ message: 'Sub-campaign not found' });
         }
@@ -87,7 +85,7 @@ router.post('/donate/sub-campaign', async (req: Request, res: Response) => {
         subCampaign.donations.push(savedDonation._id);
 
         // Update leaderboard
-        const donorIndex = subCampaign.leaderboard.findIndex(entry => entry.userId.equals(userId));
+        const donorIndex = subCampaign.leaderboard.findIndex((entry: any) => entry.userId.equals(userId));
         if (donorIndex !== -1) {
             // Update existing donor's amount
             subCampaign.leaderboard[donorIndex].amount += amount;
@@ -97,10 +95,36 @@ router.post('/donate/sub-campaign', async (req: Request, res: Response) => {
         }
 
         // Sort leaderboard by amount (descending)
-        subCampaign.leaderboard.sort((a, b) => b.amount - a.amount);
+        subCampaign.leaderboard.sort((a: any, b: any) => b.amount - a.amount);
 
         // Limit leaderboard to top 10 donors
         subCampaign.leaderboard = subCampaign.leaderboard.slice(0, 10);
+
+        // Check if sub-campaign goal amount is reached
+        if (subCampaign.currentAmount >= subCampaign.goalAmount) {
+            subCampaign.status = 'Ended';
+
+            // Get the parent campaign ID from the sub-campaign
+            const parentCampaignId = subCampaign.parentCampaign;
+
+            // Find the parent campaign
+            const parentCampaign = await Campaign.findById(parentCampaignId);
+            if (!parentCampaign) {
+                return res.status(404).json({ message: 'Parent campaign not found' });
+            }
+
+            // Calculate the total donation amount from the sub-campaign
+            const subCampaignDonations = await Donation.aggregate([
+                { $match: { subCampaign: subCampaign._id } },
+                { $group: { _id: null, totalAmount: { $sum: '$amount' } } }
+            ]);
+
+            const totalAmount = subCampaignDonations.length > 0 ? subCampaignDonations[0].totalAmount : 0;
+
+            // Update the parent campaign's total donation amount
+            parentCampaign.currentAmount += totalAmount;
+            await parentCampaign.save();
+        }
 
         await subCampaign.save();
 
@@ -118,7 +142,6 @@ router.post('/donate/sub-campaign', async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 });
-
 
 
 
@@ -205,7 +228,7 @@ router.get('/sub-campaigns', async (req: Request, res: Response) => {
     }
 });
 
-// GET leaderboard of a sub-campaign
+
 
 // GET leaderboard of a sub-campaign
 router.get('/sub-campaigns/:subCampaignId/leaderboard', async (req: Request, res: Response) => {
@@ -255,6 +278,34 @@ router.get('/campaigns/:id/sub-campaigns', async (req: Request, res: Response) =
         res.status(500).json({ message: 'Internal server error' });
     }
 });
+
+// Route to get information of a specific sub-campaign
+router.get('/sub-campaigns/:id', async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+
+        // Validate ID
+        if (!isValidObjectId(id)) {
+            return res.status(400).json({ message: 'Invalid sub-campaign ID' });
+        }
+
+        // Fetch sub-campaign details
+        const subCampaign = await SubCampaign.findById(id)
+            .populate('donations', 'amount user tokens')  // Populate donation details
+            .populate('leaderboard.userId', 'name role'); // Populate user details in leaderboard
+
+        if (!subCampaign) {
+            return res.status(404).json({ message: 'Sub-campaign not found' });
+        }
+
+        res.status(200).json({ subCampaign });
+    } catch (error) {
+        console.error('Error fetching sub-campaign details:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
 
 
 // Approve a sub-campaign
