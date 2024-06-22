@@ -13,6 +13,7 @@ export interface ISubCampaign extends Document {
     leaderboard: { userId: mongoose.Types.ObjectId; amount: number }[];
     approved: boolean; // Approved field
     status: string;
+    campaignImage: string;
 }
 
 const subCampaignSchema: Schema = new Schema({
@@ -27,7 +28,8 @@ const subCampaignSchema: Schema = new Schema({
     donations: [{ type: Schema.Types.ObjectId, ref: 'Donation' }],
     leaderboard: [{ userId: { type: Schema.Types.ObjectId, ref: 'User' }, amount: { type: Number, default: 0 } }],
     approved: { type: Boolean, default: false }, // Default to false until approved
-    status: { type: String, default: 'Active' } // Add this line
+    status: { type: String, default: 'Active' }, // Add this line
+    campaignImage: { type: String, required: true },
 });
 
 export default mongoose.model<ISubCampaign>('SubCampaign', subCampaignSchema);
