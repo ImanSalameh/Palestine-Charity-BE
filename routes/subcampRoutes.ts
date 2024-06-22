@@ -10,40 +10,34 @@ import { Campaign } from '../models/campaigns';
 
 
 const router = express.Router();
-
 // Create a new sub-campaign
 router.post('/sub-campaigns', async (req: Request, res: Response) => {
     try {
-        const { parentCampaignId, influencerId, name, description, startDate, endDate, goalAmount } = req.body;
+        const { name, description, parentCampaignId, goalAmount, startDate, endDate, influencer } = req.body;
 
-        // Check if influencerId is valid
-        if (!isValidObjectId(influencerId)) {
-            return res.status(400).json({ message: 'Invalid influencer ID' });
+        // Validate required fields
+        if (!name || !description || !parentCampaignId || !goalAmount || !startDate || !endDate || !influencer) {
+            return res.status(400).json({ message: 'All fields are required' });
         }
 
-        // Check if the user is an influencer
-        const influencer = await User.findById(influencerId);
-        if (!influencer) {
-            return res.status(404).json({ message: 'Influencer not found' });
+        // Fetch the parent campaign
+        const parentCampaign = await Campaign.findById(parentCampaignId);
+        if (!parentCampaign) {
+            return res.status(404).json({ message: 'Parent campaign not found' });
         }
 
-        // Check if the user role is Influencer
-        if (influencer.Role !== 'Influencer') {
-            return res.status(403).json({ message: 'User is not authorized to create sub-campaigns' });
-        }
-
-        // Create a new sub-campaign
+        // Create the sub-campaign
         const newSubCampaign = new SubCampaign({
-            parentCampaign: parentCampaignId,
-            influencer: influencerId,
             name,
             description,
+            parentCampaign: parentCampaignId,
+            goalAmount,
             startDate,
             endDate,
-            goalAmount
+            influencer,
+            campaignImage: parentCampaign.campaignImage // Inherit the campaign image from the parent campaign
         });
 
-        // Save the sub-campaign
         const savedSubCampaign = await newSubCampaign.save();
 
         res.status(201).json({ message: 'Sub-campaign created successfully', subCampaign: savedSubCampaign });
