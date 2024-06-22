@@ -306,6 +306,34 @@ router.get('/sub-campaigns/:id', async (req: Request, res: Response) => {
 });
 
 
+// API endpoint to get all sub-campaigns of a specific influencer
+router.get('/influencer/:influencerId/sub-campaigns', async (req: Request, res: Response) => {
+    try {
+        const { influencerId } = req.params;
+
+        // Validate influencerId
+        if (!isValidObjectId(influencerId)) {
+            return res.status(400).json({ message: 'Invalid influencer ID' });
+        }
+
+        // Find the influencer
+        const influencer = await User.findById(influencerId);
+        if (!influencer) {
+            return res.status(404).json({ message: 'Influencer not found' });
+        }
+
+        // Find all sub-campaigns associated with the influencer
+        const subCampaigns = await SubCampaign.find({ influencer: influencerId });
+
+        res.status(200).json({ subCampaigns });
+    } catch (error) {
+        console.error('Error fetching sub-campaigns for influencer:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
+
 
 
 // Approve a sub-campaign
